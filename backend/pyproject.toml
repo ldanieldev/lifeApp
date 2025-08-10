@@ -1,0 +1,45 @@
+[tool.ruff]
+# Enable the formatter
+target-version = "py39"
+line-length = 120
+indent-width = 4
+
+# Enable Pyflakes (`F`), McCabe complexity (`C90`), isort (`I`), and more
+select = ["E", "F", "I", "C90", "N", "B", "UP", "A", "DJ"]
+ignore = []
+
+# Allow autofix for all enabled rules (when `--fix` is provided)
+fixable = ["ALL"]
+
+# Format docstrings
+extend-select = ["D"]
+
+[tool.ruff.format]
+# Use double quotes for strings
+quote-style = "double"
+# Indent with spaces
+indent-style = "space"
+# Skip formatting files that already match the style
+skip-magic-trailing-comma = false
+# Like Black
+line-ending = "auto"
+
+[tool.ruff.lint.mccabe]
+max-complexity = 10
+
+[tool.ruff.lint.isort]
+known-third-party = ["django", "rest_framework"]
+
+[tool.ruff.lint.per-file-ignores]
+"__init__.py" = ["F401"]
+"test_*.py" = ["S101"]
+"tests.py" = ["S101"]
+"conftest.py" = ["S101"]
+
+[tool.pytest.ini_options]
+DJANGO_SETTINGS_MODULE = "core.settings"
+python_files = ["tests.py", "test_*.py", "*_tests.py"]
+filterwarnings = [
+    "ignore::DeprecationWarning",
+    "ignore::django.utils.deprecation.RemovedInDjango51Warning",
+]

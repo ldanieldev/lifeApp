@@ -1,0 +1,80 @@
+version: '3.8'
+services:
+  app:
+    image: mcr.microsoft.com/devcontainers/python:3.13
+    volumes:
+      - ..:/workspace:cached
+      - vscode-server:/root/.vscode-server
+    command: sleep infinity
+    depends_on:
+      - db
+    env_file:
+      - ../.env
+    environment:
+      # Override or add specific dev container vars
+      - DATABASE_URL=postgresql://postgres:postgres@db:5432/life_app
+
+  db:
+    image: postgres:16
+    env_file:
+      - ../.env
+    environment:
+      # Dev-specific overrides
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: life_app
+    ports:
+      - '5432:5432'
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+  redis:
+    image: redis:8-alpine
+    ports:
+      - '6379:6379'
+    volumes:
+      - redis_data:/data
+    command: redis-server --appendonly yes
+
+  redis-insight:
+    image: redis/redisinsight:latest
+    ports:
+      - '5540:5540'
+    volumes:
+      - redis_insight_data:/data
+    depends_on:
+      - redis
+
+  elasticsearch:
+    image: docker.elastic.co/elasticsearch/elasticsearch:9.1.0
+    environment:
+      - discovery.type=single-node
+      - xpack.security.enabled=false
+      - 'ES_JAVA_OPTS=-Xms512m -Xmx512m'
+    ports:
+      - '9200:9200'
+      - '9300:9300'
+    volumes:
+      - elasticsearch_data:/usr/share/elasticsearch/data
+
+  kibana:
+    image: docker.elastic.co/kibana/kibana:9.1.0
+    environment:
+      - ELASTICSEARCH_HOSTS=http://elasticsearch:9200
+    ports:
+      - '5601:5601'
+    depends_on:
+      - elasticsearch
+
+  mailhog:
+    image: mailhog/mailhog:latest
+    ports:
+      - '1025:1025' # SMTP
+      - '8025:8025' # Web UI
+    profiles: ['dev']
+
+volumes:
+  postgres_data:
+  redis_data:
+  redis_insight_data:
+  elasticsearch_data:
+  vscode-server:

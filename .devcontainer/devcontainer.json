@@ -1,0 +1,36 @@
+{
+  "name": "LifeApp Dev Container",
+  "dockerComposeFile": "compose.yml",
+  "service": "app",
+  "workspaceFolder": "/workspace",
+  "forwardPorts": [
+    8000, // Django
+    3000, // React
+    5432, // PostgreSQL
+    6379, // Redis
+    5540, // Redis Insight
+    9200, // Elasticsearch
+    5601, // Kibana
+    8025 // Mailhog Web UI
+  ],
+  "postCreateCommand": "cd backend && pip install -r requirements-dev.txt && cd ../frontend && npm install",
+  "features": {
+    "ghcr.io/devcontainers/features/node:1": { "version": "24" }
+  },
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "ms-python.python",
+        "charliermarsh.ruff",
+        "ms-python.debugpy",
+        "bradlc.vscode-tailwindcss",
+        "ms-vscode.vscode-typescript-next",
+        "ms-vscode.vscode-json",
+        "ms-python.isort",
+        "ms-vscode.vscode-eslint",
+        "bradlc.vscode-tailwindcss",
+        "formulahendry.auto-rename-tag"
+      ]
+    }
+  }
+}
