@@ -12,18 +12,19 @@ services:
       - ../.env
     environment:
       # Override or add specific dev container vars
-      - DATABASE_URL=postgresql://postgres:postgres@db:5432/life_app
+      - DATABASE_URL=postgresql://${DB_USER:-postgres}:${DB_PASSWORD:-postgres}@db:${DB_PORT:-5432}/${POSTGRES_DB:-life_app}
 
   db:
-    image: postgres:16
+    image: postgres:17
     env_file:
       - ../.env
     environment:
       # Dev-specific overrides
-      POSTGRES_PASSWORD: postgres
-      POSTGRES_DB: life_app
+      - POSTGRES_USER=${DB_USER:-postgres}
+      - POSTGRES_PASSWORD=${DB_PASSWORD:-postgres}
+      - POSTGRES_DB=${POSTGRES_DB:-life_app}
     ports:
-      - '5432:5432'
+      - '${DB_PORT:-5432}:5432'
     volumes:
       - postgres_data:/var/lib/postgresql/data
 
@@ -70,7 +71,6 @@ services:
     ports:
       - '1025:1025' # SMTP
       - '8025:8025' # Web UI
-    profiles: ['dev']
 
 volumes:
   postgres_data:

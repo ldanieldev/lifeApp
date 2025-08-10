@@ -29,7 +29,13 @@
         "ms-python.isort",
         "ms-vscode.vscode-eslint",
         "bradlc.vscode-tailwindcss",
-        "formulahendry.auto-rename-tag"
+        "formulahendry.auto-rename-tag",
+        "Gruntfuggly.todo-tree",
+        "richie5um2.vscode-sort-json",
+        "esbenp.prettier-vscode",
+        "ChakrounAnas.turbo-console-log",
+        "njpwerner.autodocstring",
+        "cweijan.vscode-postgresql-client2"
       ]
     }
   }
