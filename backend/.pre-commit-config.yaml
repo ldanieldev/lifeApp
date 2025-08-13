@@ -1,0 +1,29 @@
+# backend/.pre-commit-config.yaml
+repos:
+  # Ruff for Python
+  - repo: https://github.com/astral-sh/ruff-pre-commit
+    rev: v0.8.4 # Use latest version
+    hooks:
+      - id: ruff
+        files: ^backend/.*\.py$
+        args: [--fix] # Auto-fix issues
+      - id: ruff-format
+        files: ^backend/.*\.py$
+
+  # Frontend tools
+  - repo: https://github.com/pre-commit/mirrors-prettier
+    rev: v4.0.0-alpha.8
+    hooks:
+      - id: prettier
+        files: ^frontend/.*\.(js|jsx|ts|tsx|css|md|json)$
+        additional_dependencies: ['prettier@3.6.2']
+
+  - repo: https://github.com/pre-commit/mirrors-eslint
+    rev: v9.17.0
+    hooks:
+      - id: eslint
+        files: ^frontend/.*\.(js|jsx|ts|tsx)$
+        additional_dependencies:
+          - 'eslint@^9.32.0'
+          - '@eslint/js@^9.32.0'
+          - 'eslint-plugin-react-hooks@^5.2.0'
