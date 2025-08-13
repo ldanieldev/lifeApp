@@ -27,7 +27,7 @@ REDIS_URL = env('REDIS_URL', default='redis://redis:6379/0')
 SECRET_KEY = SECRET_KEY
 
 
-DEBUG = env('DEBUG')
+DEBUG = DEBUG
 
 ALLOWED_HOSTS = []
 
