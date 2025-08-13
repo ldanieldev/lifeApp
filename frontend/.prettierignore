@@ -1,0 +1,7 @@
+# Ignore artifacts:
+build
+coverage
+**/build
+**/public
+*-lock.yaml
+routeTree.gen.ts

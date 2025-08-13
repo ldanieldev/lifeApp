@@ -13,7 +13,7 @@
     5601, // Kibana
     8025 // Mailhog Web UI
   ],
-  "postCreateCommand": "cd backend && pip install -r requirements-dev.txt && cd ../frontend && npm install",
+  "postCreateCommand": "cd backend && pip install -r requirements-dev.txt && cd ../frontend && yarn install",
   "features": {
     "ghcr.io/devcontainers/features/node:1": { "version": "24" }
   },
