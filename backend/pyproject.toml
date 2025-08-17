@@ -1,3 +1,8 @@
+[project]
+name = "lifeapp-backend"
+version = "0.1.0"
+requires-python = ">=3.13"
+
 [tool.ruff]
 # Enable the formatter
 target-version = "py39"

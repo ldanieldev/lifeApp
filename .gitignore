@@ -8,7 +8,10 @@ pnpm-debug.log*
 lerna-debug.log*
 
 # Dependency directories
+.pnpm-store
 node_modules/
+.venv
+.uv-cache
 __pycache__/
 
 # Build output
@@ -27,7 +30,6 @@ yarn-error.log*
 # Operating System and Editor specific files
 .DS_Store
 Thumbs.db
-.vscode/
 .idea/
 
 # Optional caches

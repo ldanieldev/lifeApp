@@ -1,0 +1,28 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "command": "cd ${workspaceFolder}/frontend && pnpm run dev",
+      "name": "Run React Dev Server",
+      "request": "launch",
+      "type": "node-terminal"
+    },
+    {
+      "name": "Run Django Server",
+      "type": "debugpy",
+      "request": "launch",
+      "python": "${workspaceFolder}/.venv/bin/python",
+      "program": "${workspaceFolder}/backend/manage.py",
+      "args": ["runserver_plus"],
+      "django": true,
+      "cwd": "${workspaceFolder}/backend"
+    }
+  ],
+  "compounds": [
+    {
+      "name": "Run Full Stack (Frontend + Backend)",
+      "configurations": ["Run React Dev Server", "Run Django Server"],
+      "stopAll": true
+    }
+  ]
+}

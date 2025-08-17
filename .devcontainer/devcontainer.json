@@ -13,9 +13,14 @@
     5601, // Kibana
     8025 // Mailhog Web UI
   ],
-  "postCreateCommand": "pip install -r backend/requirements-dev.txt && bash .devcontainer/setup-precommit-hooks.sh && cd frontend && yarn install",
+  "containerEnv": {
+    "UV_CACHE_DIR": "/workspace/.uv-cache"
+  },
+  "postCreateCommand": "bash .devcontainer/post-create.sh",
   "features": {
-    "ghcr.io/devcontainers/features/node:1": { "version": "24" }
+    "ghcr.io/devcontainers/features/node:1": { "version": "24" },
+    "ghcr.io/va-h/devcontainers-features/uv:1": {},
+    "ghcr.io/gvatsal60/dev-container-features/pre-commit:1": {}
   },
   "customizations": {
     "vscode": {

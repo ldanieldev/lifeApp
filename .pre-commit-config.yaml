@@ -1,8 +1,7 @@
-# backend/.pre-commit-config.yaml
 repos:
   # Ruff for Python
   - repo: https://github.com/astral-sh/ruff-pre-commit
-    rev: v0.8.4 # Use latest version
+    rev: v0.12.9
     hooks:
       - id: ruff
         files: ^backend/.*\.py$
