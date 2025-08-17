@@ -13,6 +13,7 @@ node_modules/
 .venv
 .uv-cache
 __pycache__/
+.ruff_cache/
 
 # Build output
 build/
