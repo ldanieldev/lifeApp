@@ -1,9 +1,9 @@
 django==5.2.5
 psycopg[binary]~=3.2.0
-django-environ~=0.10.0
+django-environ~=0.12.0
 django-cors-headers~=4.7.0
 djangorestframework~=3.16.0
-django-allauth~=65.10.0
+django-allauth~=65.11.0
 redis~=6.4.0
 django-redis~=6.0.0
 elasticsearch~=9.1.0
