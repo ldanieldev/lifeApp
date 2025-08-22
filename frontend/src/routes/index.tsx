@@ -28,7 +28,7 @@ function Index() {
 
   if (isPending) return <div>Loading...</div>;
 
-  if (error) return <div>Errorjfgnjng: {error.message}</div>;
+  if (error) return <div>Error: {error.message}</div>;
 
   return (
     <div className="p-2">
