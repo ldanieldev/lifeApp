@@ -504,7 +504,7 @@ const TodoDashboard: React.FC = () => {
                             <div className="flex items-center justify-between mb-2">
                               <div className="flex items-center gap-2">
                                 <div className={`w-3 h-3 rounded-full ${colors.dot}`} />
-                                <h4 className="font-medium text-sm">{list.name}</h4>
+                                <h4 className="font-medium text-sm text-primary">{list.name}</h4>
                               </div>
                               <Badge variant="secondary" className="text-xs">
                                 {stats.total}
