@@ -21,5 +21,5 @@ urlpatterns = [
     path("admin/", admin.site.urls),
 ]
 
-if debug_toolbar_urls() if 'debug_toolbar' in settings.INSTALLED_APPS and getattr(settings, 'DEBUG', False) else []:
+if "debug_toolbar" in settings.INSTALLED_APPS and getattr(settings, "DEBUG", False):
     urlpatterns += debug_toolbar_urls()
