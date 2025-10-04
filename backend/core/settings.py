@@ -220,7 +220,12 @@ REST_FRAMEWORK = {
     "DEFAULT_FILTER_BACKENDS": ["django_filters.rest_framework.DjangoFilterBackend"],
     "DEFAULT_SCHEMA_CLASS": "drf_spectacular.openapi.AutoSchema",
     "DEFAULT_RENDERER_CLASSES": [
-        "rest_framework.renderers.JSONRenderer",
+        "djangorestframework_camel_case.render.CamelCaseJSONRenderer",
+    ],
+    "DEFAULT_PARSER_CLASSES": [
+        "djangorestframework_camel_case.parser.CamelCaseJSONParser",
+        "rest_framework.parsers.FormParser",
+        "rest_framework.parsers.MultiPartParser",
     ],
     "DEFAULT_AUTHENTICATION_CLASSES": [
         "rest_framework.authentication.SessionAuthentication",
@@ -245,8 +250,8 @@ if DEBUG:
     # Debug toolbar middleware
     MIDDLEWARE.insert(0, "debug_toolbar.middleware.DebugToolbarMiddleware")
 
-    # Browsable API renderer
-    REST_FRAMEWORK["DEFAULT_RENDERER_CLASSES"].append("rest_framework.renderers.BrowsableAPIRenderer")
+    # Browsable API renderer with camelCase support
+    REST_FRAMEWORK["DEFAULT_RENDERER_CLASSES"].append("djangorestframework_camel_case.render.CamelCaseBrowsableAPIRenderer")
 
     # Development email - Mailhog
     EMAIL_HOST = env("EMAIL_HOST", default="mailhog")
