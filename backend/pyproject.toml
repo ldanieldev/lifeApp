@@ -9,6 +9,7 @@ target-version = "py39"
 line-length = 120
 indent-width = 4
 
+[tool.ruff.lint]
 # Enable Pyflakes (`F`), McCabe complexity (`C90`), isort (`I`), and more
 select = ["E", "F", "I", "C90", "N", "B", "UP", "A", "DJ"]
 ignore = []
@@ -40,11 +41,11 @@ known-third-party = ["django", "rest_framework"]
 "test_*.py" = ["S101"]
 "tests.py" = ["S101"]
 "conftest.py" = ["S101"]
+"create_test_data.py" = ["E402"]
 
 [tool.pytest.ini_options]
 DJANGO_SETTINGS_MODULE = "core.settings"
 python_files = ["tests.py", "test_*.py", "*_tests.py"]
 filterwarnings = [
     "ignore::DeprecationWarning",
-    "ignore::django.utils.deprecation.RemovedInDjango51Warning",
 ]

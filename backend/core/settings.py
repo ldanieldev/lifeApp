@@ -40,13 +40,25 @@ INSTALLED_APPS = [
     "django.contrib.messages",
     "django.contrib.staticfiles",
     "django.contrib.sites",
+    "django.contrib.humanize",  # Required for allauth passkey templates
     "django_extensions",
     "debug_toolbar",
     "corsheaders",
     "drf_spectacular",
     "rest_framework",
     "django_filters",
+    # allauth apps
     "allauth",
+    "allauth.account",
+    "allauth.socialaccount",
+    "allauth.socialaccount.providers.google",
+    "allauth.socialaccount.providers.github",
+    "allauth.headless",
+    "allauth.mfa",  # Required for WebAuthn/passkey support
+    # Custom apps
+    "users",
+    "authentication",
+    "emails",
     "core",
 ]
 
@@ -59,6 +71,7 @@ MIDDLEWARE = [
     "django.contrib.auth.middleware.AuthenticationMiddleware",
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
+    "allauth.account.middleware.AccountMiddleware",  # Required for allauth
 ]
 
 ROOT_URLCONF = "core.urls"
@@ -153,22 +166,78 @@ DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
 SITE_ID = 1
 
+# Custom User Model
+AUTH_USER_MODEL = "users.User"
+
+# django-allauth Configuration
+ACCOUNT_LOGIN_METHODS = {"email"}  # Use email for login
+ACCOUNT_SIGNUP_FIELDS = ["email*", "password1*", "password2*"]  # Required signup fields
+ACCOUNT_EMAIL_VERIFICATION = "mandatory"  # For username/password only
+ACCOUNT_EMAIL_VERIFICATION_BY_CODE_ENABLED = True  # Required for passkey signup
+SOCIALACCOUNT_AUTO_SIGNUP = True
+SOCIALACCOUNT_EMAIL_VERIFICATION = "none"  # Skip email verification for social accounts
+HEADLESS_ONLY = True  # Enable headless mode
+
+# WebAuthn/Passkey Configuration
+MFA_SUPPORTED_TYPES = ["webauthn", "recovery_codes"]  # Enable passkeys
+MFA_PASSKEY_LOGIN_ENABLED = True  # Allow login with passkey
+MFA_PASSKEY_SIGNUP_ENABLED = True  # Allow signup with passkey
+
+# JWT Settings
+JWT_SECRET_KEY = env("JWT_SECRET_KEY", default=SECRET_KEY)
+JWT_ACCESS_TOKEN_LIFETIME = env.int("JWT_ACCESS_TOKEN_LIFETIME", default=15)  # minutes
+JWT_REFRESH_TOKEN_LIFETIME = env.int("JWT_REFRESH_TOKEN_LIFETIME", default=7)  # days
+JWT_ALGORITHM = "HS256"
+
+# OAuth Provider Configuration
+SOCIALACCOUNT_PROVIDERS = {
+    "google": {
+        "APP": {
+            "client_id": env("GOOGLE_CLIENT_ID", default=""),
+            "secret": env("GOOGLE_CLIENT_SECRET", default=""),
+        },
+        "SCOPE": [
+            "profile",
+            "email",
+        ],
+        "AUTH_PARAMS": {
+            "access_type": "online",
+        },
+    },
+    "github": {
+        "APP": {
+            "client_id": env("GITHUB_CLIENT_ID", default=""),
+            "secret": env("GITHUB_CLIENT_SECRET", default=""),
+        },
+        "SCOPE": [
+            "user",
+            "user:email",
+        ],
+    },
+}
+
 REST_FRAMEWORK = {
-    "DEFAULT_FILTER_BACKENDS": ("django_filters.rest_framework.DjangoFilterBackend"),
+    "DEFAULT_FILTER_BACKENDS": ["django_filters.rest_framework.DjangoFilterBackend"],
     "DEFAULT_SCHEMA_CLASS": "drf_spectacular.openapi.AutoSchema",
     "DEFAULT_RENDERER_CLASSES": [
         "rest_framework.renderers.JSONRenderer",
     ],
-    "DEFAULT_AUTHENTICATION_CLASSES": ["rest_framework.authentication.SessionAuthentication"],
+    "DEFAULT_AUTHENTICATION_CLASSES": [
+        "rest_framework.authentication.SessionAuthentication",
+        "authentication.authentication.JWTAuthentication",
+    ],
     "DEFAULT_PAGINATION_CLASS": "rest_framework.pagination.PageNumberPagination",
     "PAGE_SIZE": 10,
+    "EXCEPTION_HANDLER": "authentication.exceptions.custom_exception_handler",
 }
 
 SPECTACULAR_SETTINGS = {
     "TITLE": "Life App API",
-    "DESCRIPTION": "",
+    "DESCRIPTION": "Authentication and user management API",
     "VERSION": "1.0.0",
     "SERVE_INCLUDE_SCHEMA": False,
+    "COMPONENT_SPLIT_REQUEST": True,
+    "SCHEMA_PATH_PREFIX": "/api",
 }
 
 # Environment-specific configuration
@@ -184,6 +253,9 @@ if DEBUG:
     EMAIL_PORT = env.int("EMAIL_PORT", default=1025)
     EMAIL_USE_TLS = False
     EMAIL_USE_SSL = False
+
+    # Allow insecure origin for WebAuthn in development (localhost)
+    MFA_WEBAUTHN_ALLOW_INSECURE_ORIGIN = True
 else:
     # Production email - SMTP
     EMAIL_HOST = env("EMAIL_HOST", default="smtp.gmail.com")
@@ -199,3 +271,6 @@ else:
     # CSRF protection for cross-origin requests from React frontend
     # Example: CSRF_TRUSTED_ORIGINS=https://app.example.com,https://example.com
     CSRF_TRUSTED_ORIGINS = env.list("CSRF_TRUSTED_ORIGINS", default=[])
+
+    # WebAuthn requires HTTPS in production
+    MFA_WEBAUTHN_ALLOW_INSECURE_ORIGIN = False

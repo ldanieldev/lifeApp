@@ -5,9 +5,20 @@ repos:
     hooks:
       - id: ruff
         files: ^backend/.*\.py$
+        exclude: |
+          (?x)(
+            ^backend/.*/migrations/.*\.py$|
+            ^backend/.*/__init__\.py$|
+            ^backend/manage\.py$
+          )
         args: [--fix] # Auto-fix issues
       - id: ruff-format
         files: ^backend/.*\.py$
+        exclude: |
+          (?x)(
+            ^backend/.*/migrations/.*\.py$|
+            ^backend/.*/__init__\.py$
+          )
 
   # Frontend tools
   - repo: https://github.com/pre-commit/mirrors-prettier
