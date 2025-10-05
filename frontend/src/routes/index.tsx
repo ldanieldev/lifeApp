@@ -1,6 +1,6 @@
 import { queryOptions, useQuery } from '@tanstack/react-query';
 import { createFileRoute, Outlet } from '@tanstack/react-router';
-import axios from 'redaxios';
+import axios from 'axios';
 
 type PostType = {
   id: string;

@@ -10,11 +10,22 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as TodoRouteImport } from './routes/todo'
+import { Route as AccountRouteImport } from './routes/account'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as AuthRegisterRouteImport } from './routes/auth/register'
+import { Route as AuthLoginRouteImport } from './routes/auth/login'
+import { Route as AuthPasswordResetRouteImport } from './routes/auth/password/reset'
+import { Route as AuthCallbackProviderRouteImport } from './routes/auth/callback/$provider'
+import { Route as AuthPasswordResetTokenRouteImport } from './routes/auth/password/reset/$token'
 
 const TodoRoute = TodoRouteImport.update({
   id: '/todo',
   path: '/todo',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AccountRoute = AccountRouteImport.update({
+  id: '/account',
+  path: '/account',
   getParentRoute: () => rootRouteImport,
 } as any)
 const IndexRoute = IndexRouteImport.update({
@@ -22,31 +33,104 @@ const IndexRoute = IndexRouteImport.update({
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AuthRegisterRoute = AuthRegisterRouteImport.update({
+  id: '/auth/register',
+  path: '/auth/register',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AuthLoginRoute = AuthLoginRouteImport.update({
+  id: '/auth/login',
+  path: '/auth/login',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AuthPasswordResetRoute = AuthPasswordResetRouteImport.update({
+  id: '/auth/password/reset',
+  path: '/auth/password/reset',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AuthCallbackProviderRoute = AuthCallbackProviderRouteImport.update({
+  id: '/auth/callback/$provider',
+  path: '/auth/callback/$provider',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AuthPasswordResetTokenRoute = AuthPasswordResetTokenRouteImport.update({
+  id: '/$token',
+  path: '/$token',
+  getParentRoute: () => AuthPasswordResetRoute,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/account': typeof AccountRoute
   '/todo': typeof TodoRoute
+  '/auth/login': typeof AuthLoginRoute
+  '/auth/register': typeof AuthRegisterRoute
+  '/auth/callback/$provider': typeof AuthCallbackProviderRoute
+  '/auth/password/reset': typeof AuthPasswordResetRouteWithChildren
+  '/auth/password/reset/$token': typeof AuthPasswordResetTokenRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/account': typeof AccountRoute
   '/todo': typeof TodoRoute
+  '/auth/login': typeof AuthLoginRoute
+  '/auth/register': typeof AuthRegisterRoute
+  '/auth/callback/$provider': typeof AuthCallbackProviderRoute
+  '/auth/password/reset': typeof AuthPasswordResetRouteWithChildren
+  '/auth/password/reset/$token': typeof AuthPasswordResetTokenRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/account': typeof AccountRoute
   '/todo': typeof TodoRoute
+  '/auth/login': typeof AuthLoginRoute
+  '/auth/register': typeof AuthRegisterRoute
+  '/auth/callback/$provider': typeof AuthCallbackProviderRoute
+  '/auth/password/reset': typeof AuthPasswordResetRouteWithChildren
+  '/auth/password/reset/$token': typeof AuthPasswordResetTokenRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/todo'
+  fullPaths:
+    | '/'
+    | '/account'
+    | '/todo'
+    | '/auth/login'
+    | '/auth/register'
+    | '/auth/callback/$provider'
+    | '/auth/password/reset'
+    | '/auth/password/reset/$token'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/todo'
-  id: '__root__' | '/' | '/todo'
+  to:
+    | '/'
+    | '/account'
+    | '/todo'
+    | '/auth/login'
+    | '/auth/register'
+    | '/auth/callback/$provider'
+    | '/auth/password/reset'
+    | '/auth/password/reset/$token'
+  id:
+    | '__root__'
+    | '/'
+    | '/account'
+    | '/todo'
+    | '/auth/login'
+    | '/auth/register'
+    | '/auth/callback/$provider'
+    | '/auth/password/reset'
+    | '/auth/password/reset/$token'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  AccountRoute: typeof AccountRoute
   TodoRoute: typeof TodoRoute
+  AuthLoginRoute: typeof AuthLoginRoute
+  AuthRegisterRoute: typeof AuthRegisterRoute
+  AuthCallbackProviderRoute: typeof AuthCallbackProviderRoute
+  AuthPasswordResetRoute: typeof AuthPasswordResetRouteWithChildren
 }
 
 declare module '@tanstack/react-router' {
@@ -58,6 +142,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof TodoRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/account': {
+      id: '/account'
+      path: '/account'
+      fullPath: '/account'
+      preLoaderRoute: typeof AccountRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/': {
       id: '/'
       path: '/'
@@ -65,12 +156,63 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/auth/register': {
+      id: '/auth/register'
+      path: '/auth/register'
+      fullPath: '/auth/register'
+      preLoaderRoute: typeof AuthRegisterRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/auth/login': {
+      id: '/auth/login'
+      path: '/auth/login'
+      fullPath: '/auth/login'
+      preLoaderRoute: typeof AuthLoginRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/auth/password/reset': {
+      id: '/auth/password/reset'
+      path: '/auth/password/reset'
+      fullPath: '/auth/password/reset'
+      preLoaderRoute: typeof AuthPasswordResetRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/auth/callback/$provider': {
+      id: '/auth/callback/$provider'
+      path: '/auth/callback/$provider'
+      fullPath: '/auth/callback/$provider'
+      preLoaderRoute: typeof AuthCallbackProviderRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/auth/password/reset/$token': {
+      id: '/auth/password/reset/$token'
+      path: '/$token'
+      fullPath: '/auth/password/reset/$token'
+      preLoaderRoute: typeof AuthPasswordResetTokenRouteImport
+      parentRoute: typeof AuthPasswordResetRoute
+    }
   }
 }
 
+interface AuthPasswordResetRouteChildren {
+  AuthPasswordResetTokenRoute: typeof AuthPasswordResetTokenRoute
+}
+
+const AuthPasswordResetRouteChildren: AuthPasswordResetRouteChildren = {
+  AuthPasswordResetTokenRoute: AuthPasswordResetTokenRoute,
+}
+
+const AuthPasswordResetRouteWithChildren =
+  AuthPasswordResetRoute._addFileChildren(AuthPasswordResetRouteChildren)
+
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  AccountRoute: AccountRoute,
   TodoRoute: TodoRoute,
+  AuthLoginRoute: AuthLoginRoute,
+  AuthRegisterRoute: AuthRegisterRoute,
+  AuthCallbackProviderRoute: AuthCallbackProviderRoute,
+  AuthPasswordResetRoute: AuthPasswordResetRouteWithChildren,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

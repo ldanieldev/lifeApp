@@ -15,11 +15,6 @@ import { BanknoteIcon, BookHeartIcon, CarIcon, HeartPulseIcon, ListTodoIcon, Sig
 import * as React from 'react';
 
 const data = {
-  user: {
-    name: 'shadcn',
-    email: 'm@example.com',
-    avatar_url: 'https://github.com/shadcn.png',
-  },
   navMain: [
     {
       title: 'ToDos',
@@ -97,7 +92,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
         <NavMain items={data.navMain} />
       </SidebarContent>
       <SidebarFooter>
-        <NavUser user={data.user} />
+        <NavUser />
       </SidebarFooter>
       <SidebarRail />
     </Sidebar>

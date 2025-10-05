@@ -1,3 +1,4 @@
+import { Link } from '@tanstack/react-router';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/shadcn/avatar';
 import {
   DropdownMenu,
@@ -9,18 +10,29 @@ import {
   DropdownMenuTrigger,
 } from '@/components/shadcn/dropdown-menu';
 import { SidebarMenu, SidebarMenuButton, SidebarMenuItem, useSidebar } from '@/components/shadcn/sidebar';
-import { BadgeCheckIcon, BellIcon, ChevronsUpDown, LogOutIcon, SettingsIcon } from 'lucide-react';
+import { BadgeCheckIcon, ChevronsUpDown, LogOutIcon, SettingsIcon, UserIcon } from 'lucide-react';
+import { useAuth } from '@/hooks/useAuth';
 
-export function NavUser({
-  user,
-}: {
-  user: {
-    name: string;
-    email: string;
-    avatar_url: string;
-  };
-}) {
+export function NavUser() {
   const { isMobile } = useSidebar();
+  const { user, logout } = useAuth();
+
+  if (!user) return null;
+
+  const getInitials = () => {
+    const first = user.firstName?.charAt(0) || '';
+    const last = user.lastName?.charAt(0) || '';
+    return (first + last).toUpperCase();
+  };
+
+  const fullName = `${user.firstName || ''} ${user.lastName || ''}`.trim();
+  const displayName = fullName || user.email;
+  const initials = getInitials();
+
+  const handleLogout = async () => {
+    await logout();
+    // Navigation is handled by the logout function
+  };
 
   return (
     <SidebarMenu>
@@ -32,12 +44,12 @@ export function NavUser({
               className="data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground"
             >
               <Avatar className="h-8 w-8 rounded-lg">
-                <AvatarImage src={user.avatar_url} alt={user.name} />
-                <AvatarFallback className="rounded-lg">CN</AvatarFallback>
+                <AvatarImage src={user.profilePictureUrl} alt={displayName} />
+                <AvatarFallback className="rounded-lg">{initials || <UserIcon className="h-4 w-4" />}</AvatarFallback>
               </Avatar>
               <div className="grid flex-1 text-left text-sm leading-tight">
-                <span className="truncate font-medium">{user.name}</span>
-                <span className="truncate text-xs">{user.email}</span>
+                <span className="truncate font-medium">{displayName}</span>
+                {fullName ? <span className="truncate text-xs">{user.email}</span> : null}
               </div>
               <ChevronsUpDown className="ml-auto size-4" />
             </SidebarMenuButton>
@@ -51,32 +63,32 @@ export function NavUser({
             <DropdownMenuLabel className="p-0 font-normal">
               <div className="flex items-center gap-2 px-1 py-1.5 text-left text-sm">
                 <Avatar className="h-8 w-8 rounded-lg">
-                  <AvatarImage src={user.avatar_url} alt={user.name} />
-                  <AvatarFallback className="rounded-lg">CN</AvatarFallback>
+                  <AvatarImage src={user.profilePictureUrl} alt={displayName} />
+                  <AvatarFallback className="rounded-lg">{initials || <UserIcon className="h-4 w-4" />}</AvatarFallback>
                 </Avatar>
                 <div className="grid flex-1 text-left text-sm leading-tight">
-                  <span className="truncate font-medium">{user.name}</span>
-                  <span className="truncate text-xs">{user.email}</span>
+                  <span className="truncate font-medium">{displayName}</span>
+                  {fullName ? <span className="truncate text-xs">{user.email}</span> : null}
                 </div>
               </div>
             </DropdownMenuLabel>
             <DropdownMenuSeparator />
             <DropdownMenuGroup>
-              <DropdownMenuItem>
-                <BadgeCheckIcon />
-                Account
+              <DropdownMenuItem asChild>
+                <Link to="/account">
+                  <BadgeCheckIcon />
+                  Account
+                </Link>
               </DropdownMenuItem>
-              <DropdownMenuItem>
-                <SettingsIcon />
-                Settings
-              </DropdownMenuItem>
-              <DropdownMenuItem>
-                <BellIcon />
-                Notifications
+              <DropdownMenuItem asChild>
+                <Link to="/account">
+                  <SettingsIcon />
+                  Settings
+                </Link>
               </DropdownMenuItem>
             </DropdownMenuGroup>
             <DropdownMenuSeparator />
-            <DropdownMenuItem>
+            <DropdownMenuItem onClick={handleLogout}>
               <LogOutIcon />
               Log out
             </DropdownMenuItem>
