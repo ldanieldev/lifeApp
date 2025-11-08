@@ -33,6 +33,7 @@ repos:
     hooks:
       - id: eslint
         files: ^frontend/.*\.(js|jsx|ts|tsx)$
+        args: [--config, frontend/eslint.config.js]
         additional_dependencies:
           - 'eslint@^9.32.0'
           - '@eslint/js@^9.32.0'
