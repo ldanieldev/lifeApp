@@ -1,36 +1,33 @@
+/**
+ * Axios instance for Life App API
+ *
+ * Configured for session-based authentication with django-allauth:
+ * - Automatically includes CSRF token from cookies
+ * - Uses withCredentials for session cookies
+ * - No JWT token management needed
+ */
+
 import Cookies from 'js-cookie';
-import axios, { AxiosError, type InternalAxiosRequestConfig } from 'axios';
+import axios, { type InternalAxiosRequestConfig } from 'axios';
 import env from '@/config/env';
-
-let accessToken: string | null = null;
-let tokenRefreshPromise: Promise<string> | null = null;
-
-export const getAccessToken = (): string | null => accessToken;
-
-export const setAccessToken = (token: string | null): void => {
-  accessToken = token;
-};
 
 export const lifeAppApi = axios.create({
   baseURL: env.apiBaseUrl,
-  withCredentials: true,
+  withCredentials: true, // Required for session cookies
   headers: {
     'Content-Type': 'application/json',
   },
 });
 
-// Request interceptor - add access token and CSRF token
+// Request interceptor - add CSRF token from cookies
 lifeAppApi.interceptors.request.use(
   (config: InternalAxiosRequestConfig) => {
-    // Add CSRF token
-    const csrfToken = Cookies.get('csrftoken');
-    if (csrfToken) {
-      config.headers['X-CSRFToken'] = csrfToken;
-    }
-
-    // Add access token
-    if (accessToken) {
-      config.headers['Authorization'] = `Bearer ${accessToken}`;
+    // Add CSRF token for all non-GET requests
+    if (config.method !== 'get') {
+      const csrfToken = Cookies.get('csrftoken');
+      if (csrfToken) {
+        config.headers['X-CSRFToken'] = csrfToken;
+      }
     }
 
     return config;
@@ -38,55 +35,58 @@ lifeAppApi.interceptors.request.use(
   (error) => Promise.reject(error)
 );
 
-// Response interceptor - handle token refresh on 401
+// Response interceptor - dispatch auth change events on auth-related responses
 lifeAppApi.interceptors.response.use(
-  (response) => response,
-  async (error: AxiosError) => {
-    const originalRequest = error.config as InternalAxiosRequestConfig & { _retry?: boolean };
+  (response) => {
+    // Check if this is an auth-related response
+    const isAuthEndpoint = response.config.url?.includes('/_allauth/');
+    const data = response.data;
 
-    // If 401 and we haven't retried yet, try to refresh the token
-    if (error.response?.status === 401 && originalRequest && !originalRequest._retry) {
-      originalRequest._retry = true;
+    // Dispatch auth change event if response indicates auth state change
+    if (isAuthEndpoint && data?.meta?.isAuthenticated !== undefined) {
+      const event = new CustomEvent('allauth.auth.change', { detail: data });
+      document.dispatchEvent(event);
+    }
 
-      try {
-        // If there's already a refresh in progress, wait for it
-        if (tokenRefreshPromise) {
-          const newToken = await tokenRefreshPromise;
-          setAccessToken(newToken);
-          originalRequest.headers['Authorization'] = `Bearer ${newToken}`;
-          return lifeAppApi(originalRequest);
-        }
+    return response;
+  },
+  (error) => {
+    // For allauth endpoints, check if the response contains valid data despite HTTP error status
+    const isAuthEndpoint = error.config?.url?.includes('/_allauth/');
+    const data = error.response?.data;
 
-        // Start a new token refresh
-        tokenRefreshPromise = (async () => {
-          const response = await axios.post<{ accessToken: string }>(
-            `${env.apiBaseUrl}/auth/token/refresh`,
-            {},
-            {
-              withCredentials: true,
-              headers: {
-                'X-CSRFToken': Cookies.get('csrftoken') || '',
-              },
-            }
-          );
-          return response.data.accessToken;
-        })();
+    if (isAuthEndpoint && data?.status !== undefined) {
+      // This is a valid allauth response (they return status in JSON body)
+      // Dispatch auth change event if needed
+      if (data?.meta?.isAuthenticated !== undefined) {
+        const event = new CustomEvent('allauth.auth.change', { detail: data });
+        document.dispatchEvent(event);
+      }
 
-        const newToken = await tokenRefreshPromise;
-        tokenRefreshPromise = null;
+      // Return the response data instead of rejecting
+      // This allows callers to handle allauth's JSON status codes properly
+      return { ...error.response, data };
+    }
 
-        setAccessToken(newToken);
-        originalRequest.headers['Authorization'] = `Bearer ${newToken}`;
+    // Handle 401 errors on non-allauth endpoints (session expired)
+    if (error.response?.status === 401 && !isAuthEndpoint) {
+      // Dispatch auth change event to update global auth state
+      const unauthenticatedEvent = new CustomEvent('allauth.auth.change', {
+        detail: {
+          status: 401,
+          data: { flows: [] },
+          meta: { isAuthenticated: false },
+        },
+      });
+      document.dispatchEvent(unauthenticatedEvent);
 
-        return lifeAppApi(originalRequest);
-      } catch (refreshError) {
-        // If refresh fails, clear token and reject
-        tokenRefreshPromise = null;
-        setAccessToken(null);
-        return Promise.reject(refreshError);
+      // Redirect to login if not already on an auth page
+      if (!window.location.pathname.startsWith('/auth')) {
+        window.location.href = `/auth/login?redirect=${encodeURIComponent(window.location.pathname)}`;
       }
     }
 
+    // For non-allauth endpoints or invalid responses, reject as normal
     return Promise.reject(error);
   }
 );

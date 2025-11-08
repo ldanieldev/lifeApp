@@ -8,6 +8,12 @@
       "type": "node-terminal"
     },
     {
+      "command": "cd ${workspaceFolder}/frontend && pnpm run build && pnpm run preview --port 3000",
+      "name": "Run React PROD Build",
+      "request": "launch",
+      "type": "node-terminal"
+    },
+    {
       "name": "Run Django Server",
       "type": "debugpy",
       "request": "launch",

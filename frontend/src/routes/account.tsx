@@ -1,22 +1,40 @@
-import { createFileRoute } from '@tanstack/react-router';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { useState } from 'react';
-import { toast } from 'sonner';
-import { Fingerprint, Trash2, Edit2, Plus, LogOut, Save, X } from 'lucide-react';
-import { useForm } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
+import { emailAPI, sessionAPI, socialAccountAPI, webAuthnAPI } from '@/api/allauth';
+import type { EmailAddress, SocialAccount, UserSession } from '@/api/allauth.types';
+import { authApi } from '@/api/auth';
+import { PasswordChangeForm } from '@/components/passwordChangeForm';
+import { ProtectedRoute } from '@/components/protectedRoute';
+import { Badge } from '@/components/shadcn/badge';
 import { Button } from '@/components/shadcn/button';
-import { Input } from '@/components/shadcn/input';
-import { Label } from '@/components/shadcn/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/shadcn/card';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/shadcn/dialog';
+import { Input } from '@/components/shadcn/input';
+import { Label } from '@/components/shadcn/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/shadcn/select';
-import { ProtectedRoute } from '@/components/protectedRoute';
-import { useAuth } from '@/hooks/useAuth';
 import { usePasskey } from '@/hooks/usePasskey';
-import { authApi } from '@/api/auth';
+import { formatDate, formatLastSeen } from '@/lib/formatTime';
+import { parseUserAgent } from '@/lib/userAgent';
 import { userProfileUpdateSchema, type UserProfileUpdateFormData } from '@/lib/validations/auth';
+import { useAuth } from '@/providers/authProvider';
 import type { Passkey } from '@/types/auth';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { createFileRoute } from '@tanstack/react-router';
+import {
+  Edit2,
+  Fingerprint,
+  Link as LinkIcon,
+  LogOut,
+  Mail,
+  Monitor,
+  Plus,
+  Save,
+  Trash2,
+  WifiOff,
+  X,
+} from 'lucide-react';
+import { useState } from 'react';
+import { useForm } from 'react-hook-form';
+import { toast } from 'sonner';
 
 export const Route = createFileRoute('/account')({
   component: () => (
@@ -26,8 +44,42 @@ export const Route = createFileRoute('/account')({
   ),
 });
 
+// Helper function for consistent error handling across all mutations
+const handleMutationError = (error: any, fallbackMessage: string, retryFn?: () => void) => {
+  const status = error?.response?.status;
+  const hasResponseData = error?.response?.data && Object.keys(error.response.data).length > 0;
+  const isNetworkError = !error?.response || (status >= 500 && !hasResponseData);
+
+  if (isNetworkError) {
+    toast.error('Unable to connect to the server. Please check your internet connection and try again.', {
+      icon: <WifiOff className="h-4 w-4" />,
+      ...(retryFn && {
+        action: {
+          label: 'Retry',
+          onClick: retryFn,
+        },
+      }),
+    });
+    return;
+  }
+
+  // Handle server errors with better messages
+  const errors = error?.response?.data?.errors;
+  let errorMessage: string;
+
+  if (status === 429) {
+    errorMessage = 'Too many requests. Please wait a few minutes and try again.';
+  } else if (status >= 500) {
+    errorMessage = 'Server error. Please try again in a moment.';
+  } else {
+    errorMessage = errors?.[0]?.message || error?.response?.data?.message || fallbackMessage;
+  }
+
+  toast.error(errorMessage);
+};
+
 function AccountPage() {
-  const { user, logout, refetchUser } = useAuth();
+  const { user, logout, refetchUser, config } = useAuth();
   const { registerPasskey, isLoading: passkeyLoading } = usePasskey();
   const queryClient = useQueryClient();
 
@@ -36,8 +88,17 @@ function AccountPage() {
   const [showRenamePasskeyDialog, setShowRenamePasskeyDialog] = useState(false);
   const [showDeletePasskeyDialog, setShowDeletePasskeyDialog] = useState(false);
   const [showDeleteAccountDialog, setShowDeleteAccountDialog] = useState(false);
+  const [showReauthDialog, setShowReauthDialog] = useState(false);
   const [selectedPasskey, setSelectedPasskey] = useState<Passkey | null>(null);
   const [passkeyLabel, setPasskeyLabel] = useState('');
+  const [pendingOperation, setPendingOperation] = useState<(() => void) | null>(null);
+
+  // Email management state
+  const [showAddEmailDialog, setShowAddEmailDialog] = useState(false);
+  const [showVerifyEmailDialog, setShowVerifyEmailDialog] = useState(false);
+  const [newEmailInput, setNewEmailInput] = useState('');
+  const [emailToVerify, setEmailToVerify] = useState('');
+  const [verificationCode, setVerificationCode] = useState('');
 
   // Profile update form
   const {
@@ -64,11 +125,44 @@ function AccountPage() {
     queryFn: authApi.getPasskeys,
   });
 
-  // Fetch user's providers
-  const { data: providers = [] } = useQuery({
-    queryKey: ['providers'],
-    queryFn: authApi.getUserProviders,
+  // Fetch user's email addresses
+  const { data: emailsResponse } = useQuery({
+    queryKey: ['emails'],
+    queryFn: emailAPI.getEmailAddresses,
   });
+
+  const emails: EmailAddress[] = emailsResponse?.data.data || [];
+
+  // Fetch user's providers (OAuth accounts)
+  // Using allauth's endpoint
+  const { data: providersResponse } = useQuery({
+    queryKey: ['providers'],
+    queryFn: socialAccountAPI.getConnectedAccounts,
+  });
+
+  const allauthProviders: SocialAccount[] = providersResponse?.data.data || [];
+
+  // Get list of available providers from config
+  const availableProviders = config?.data.socialaccount?.providers || [];
+
+  // Get list of connected provider IDs
+  const connectedProviderIds = allauthProviders.map((acc) => acc.provider.id);
+
+  // Get list of providers that can be connected
+  const unconnectedProviders = availableProviders.filter((provider) => !connectedProviderIds.includes(provider.id));
+
+  // Fetch user's active sessions
+  const { data: sessionsResponse, isLoading: sessionsLoading } = useQuery({
+    queryKey: ['sessions'],
+    queryFn: sessionAPI.getSessions,
+    refetchInterval: 60000, // Refetch every 60 seconds
+  });
+
+  const sessions: UserSession[] = sessionsResponse?.data.data || [];
+
+  // Session management state
+  const [selectedSessionId, setSelectedSessionId] = useState<string | null>(null);
+  const [showTerminateSessionDialog, setShowTerminateSessionDialog] = useState(false);
 
   // Update user profile mutation
   const updateProfileMutation = useMutation({
@@ -79,7 +173,7 @@ function AccountPage() {
       toast.success('Profile updated successfully');
     },
     onError: (error: any) => {
-      toast.error(error?.response?.data?.message || 'Failed to update profile');
+      handleMutationError(error, 'Failed to update profile');
     },
   });
 
@@ -95,6 +189,14 @@ function AccountPage() {
     },
   });
 
+  // Helper to check if error requires reauthentication
+  const requiresReauth = (error: any) => {
+    return (
+      error?.response?.status === 401 &&
+      error?.response?.data?.data?.flows?.some((flow: any) => flow.id === 'mfa_reauthenticate')
+    );
+  };
+
   // Rename passkey mutation
   const renamePasskeyMutation = useMutation({
     mutationFn: ({ id, label }: { id: string; label: string }) => authApi.updatePasskeyLabel(id, label),
@@ -106,7 +208,13 @@ function AccountPage() {
       toast.success('Passkey renamed');
     },
     onError: (error: any) => {
-      toast.error(error?.response?.data?.message || 'Failed to rename passkey');
+      if (requiresReauth(error)) {
+        // Store the operation to retry after reauthentication
+        setPendingOperation(() => () => handleRenamePasskey());
+        setShowReauthDialog(true);
+      } else {
+        handleMutationError(error, 'Failed to rename passkey');
+      }
     },
   });
 
@@ -120,19 +228,59 @@ function AccountPage() {
       toast.success('Passkey deleted');
     },
     onError: (error: any) => {
-      toast.error(error?.response?.data?.message || 'Failed to delete passkey');
+      if (requiresReauth(error)) {
+        // Store the operation to retry after reauthentication
+        setPendingOperation(() => () => handleDeletePasskey());
+        setShowReauthDialog(true);
+      } else {
+        handleMutationError(error, 'Failed to delete passkey');
+      }
     },
   });
 
+  // Handle reauthentication
+  const handleReauthenticate = async () => {
+    try {
+      // Use the webAuthn API to reauthenticate
+      await webAuthnAPI.reauthenticateWithPasskey();
+      toast.success('Re-authenticated successfully');
+      setShowReauthDialog(false);
+
+      // Retry the pending operation
+      if (pendingOperation) {
+        pendingOperation();
+        setPendingOperation(null);
+      }
+    } catch (error: any) {
+      console.error('Reauthentication error:', error);
+      handleMutationError(error, 'Failed to re-authenticate. Please try again.');
+    }
+  };
+
   // Disconnect provider mutation
   const disconnectProviderMutation = useMutation({
-    mutationFn: (provider: string) => authApi.disconnectProvider(provider),
+    mutationFn: ({ providerId, accountUid }: { providerId: string; accountUid: string }) =>
+      socialAccountAPI.disconnectAccount(providerId, accountUid),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['providers'] });
       toast.success('Provider disconnected');
     },
     onError: (error: any) => {
-      toast.error(error?.response?.data?.message || 'Failed to disconnect provider');
+      handleMutationError(error, 'Failed to disconnect provider');
+    },
+  });
+
+  // Terminate session mutation
+  const terminateSessionMutation = useMutation({
+    mutationFn: (sessionIds: string[]) => sessionAPI.terminateSessions(sessionIds),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['sessions'] });
+      setShowTerminateSessionDialog(false);
+      setSelectedSessionId(null);
+      toast.success('Session terminated successfully');
+    },
+    onError: (error: any) => {
+      handleMutationError(error, 'Failed to terminate session');
     },
   });
 
@@ -144,7 +292,71 @@ function AccountPage() {
       await logout();
     },
     onError: (error: any) => {
-      toast.error(error?.response?.data?.message || 'Failed to delete account');
+      handleMutationError(error, 'Failed to delete account');
+    },
+  });
+
+  // Email management mutations
+  const addEmailMutation = useMutation({
+    mutationFn: (email: string) => emailAPI.addEmail(email),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['emails'] });
+      setShowAddEmailDialog(false);
+      setNewEmailInput('');
+      // Don't automatically open verify dialog - backend already sent verification code
+      // User can click "Verify" button on the email in the list
+      toast.success('Verification code sent! Check your email and click Verify.');
+    },
+    onError: (error: any) => {
+      handleMutationError(error, 'Failed to add email');
+    },
+  });
+
+  const verifyEmailMutation = useMutation({
+    mutationFn: (code: string) => emailAPI.verifyEmailCode(code),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['emails'] });
+      setShowVerifyEmailDialog(false);
+      setEmailToVerify('');
+      setVerificationCode('');
+      toast.success('Email verified successfully');
+      refetchUser();
+    },
+    onError: (error: any) => {
+      handleMutationError(error, 'Invalid verification code');
+    },
+  });
+
+  const resendCodeMutation = useMutation({
+    mutationFn: (email: string) => emailAPI.requestEmailVerification(email),
+    onSuccess: (_, email) => {
+      toast.success('Verification code sent to ' + email);
+    },
+    onError: (error: any) => {
+      handleMutationError(error, 'Failed to send verification code');
+    },
+  });
+
+  const makePrimaryMutation = useMutation({
+    mutationFn: (email: string) => emailAPI.markEmailAsPrimary(email),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['emails'] });
+      toast.success('Primary email updated');
+      refetchUser();
+    },
+    onError: (error: any) => {
+      handleMutationError(error, 'Failed to update primary email');
+    },
+  });
+
+  const removeEmailMutation = useMutation({
+    mutationFn: (email: string) => emailAPI.removeEmail(email),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['emails'] });
+      toast.success('Email address removed');
+    },
+    onError: (error: any) => {
+      handleMutationError(error, 'Failed to remove email');
     },
   });
 
@@ -183,6 +395,60 @@ function AccountPage() {
   const handleSaveProfile = handleSubmit((data: UserProfileUpdateFormData) => {
     updateProfileMutation.mutate(data);
   });
+
+  const handleConnectProvider = (providerId: string) => {
+    // Use 'connect' process and redirect back to account page
+    authApi.initiateOAuth(providerId, { process: 'connect', callbackURL: '/auth/oauth/callback?returnTo=/account' });
+  };
+
+  const handleTerminateSession = (sessionId: string) => {
+    setSelectedSessionId(sessionId);
+    setShowTerminateSessionDialog(true);
+  };
+
+  const confirmTerminateSession = () => {
+    if (selectedSessionId) {
+      terminateSessionMutation.mutate([selectedSessionId]);
+    }
+  };
+
+  // Email management handlers
+  const handleAddEmail = () => {
+    if (!newEmailInput.trim() || !newEmailInput.includes('@')) {
+      toast.error('Please enter a valid email address');
+      return;
+    }
+    addEmailMutation.mutate(newEmailInput.toLowerCase());
+  };
+
+  const handleVerifyEmail = () => {
+    if (!verificationCode.trim()) {
+      toast.error('Please enter the verification code');
+      return;
+    }
+    verifyEmailMutation.mutate(verificationCode);
+  };
+
+  const handleResendCode = (email: string) => {
+    setEmailToVerify(email);
+    setShowVerifyEmailDialog(true);
+    // Don't automatically resend when opening dialog - let user click Resend button
+  };
+
+  const handleMakePrimary = (email: string) => {
+    makePrimaryMutation.mutate(email);
+  };
+
+  const handleRemoveEmail = (email: string) => {
+    if (confirm(`Remove ${email}?`)) {
+      removeEmailMutation.mutate(email);
+    }
+  };
+
+  const handleResendVerificationCode = () => {
+    if (!emailToVerify) return;
+    resendCodeMutation.mutate(emailToVerify);
+  };
 
   return (
     <div className="container mx-auto p-6 max-w-4xl">
@@ -234,24 +500,20 @@ function AccountPage() {
                 <div className="space-y-2">
                   <Label htmlFor="sex">Sex</Label>
                   <Select
-                    value={selectedSex || undefined}
-                    onValueChange={(value) => setValue('sex', value as 'M' | 'F' | 'O')}
+                    value={selectedSex || 'N'}
+                    onValueChange={(value) => setValue('sex', value as 'M' | 'F' | 'O' | 'N')}
                   >
                     <SelectTrigger id="sex">
                       <SelectValue placeholder="Prefer not to say" />
                     </SelectTrigger>
                     <SelectContent>
+                      <SelectItem value="N">Prefer not to say</SelectItem>
                       <SelectItem value="M">Male</SelectItem>
                       <SelectItem value="F">Female</SelectItem>
                       <SelectItem value="O">Other</SelectItem>
                     </SelectContent>
                   </Select>
                   {errors.sex && <p className="text-sm text-destructive">{errors.sex.message}</p>}
-                </div>
-                <div className="space-y-2">
-                  <Label>Email</Label>
-                  <Input value={user?.email} disabled className="bg-muted" />
-                  <p className="text-xs text-muted-foreground">Email address cannot be changed</p>
                 </div>
                 <div className="flex gap-2">
                   <Button type="submit" disabled={updateProfileMutation.isPending}>
@@ -279,15 +541,96 @@ function AccountPage() {
                 <div>
                   <Label>Sex</Label>
                   <p className="text-sm mt-1">
-                    {user?.sex === 'M' ? 'Male' : user?.sex === 'F' ? 'Female' : user?.sex === 'O' ? 'Other' : '—'}
+                    {user?.sex === 'M'
+                      ? 'Male'
+                      : user?.sex === 'F'
+                        ? 'Female'
+                        : user?.sex === 'O'
+                          ? 'Other'
+                          : user?.sex === 'N'
+                            ? 'Prefer not to say'
+                            : '—'}
                   </p>
                 </div>
-                <div>
-                  <Label>Email</Label>
-                  <p className="text-sm mt-1">{user?.email}</p>
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between">
+                    <Label>Email Addresses</Label>
+                    <Button variant="outline" size="sm" onClick={() => setShowAddEmailDialog(true)}>
+                      <Plus className="mr-2 h-4 w-4" />
+                      Add Email
+                    </Button>
+                  </div>
+                  {emails.length === 0 ? (
+                    <p className="text-sm text-muted-foreground">Loading email addresses...</p>
+                  ) : (
+                    <div className="space-y-2">
+                      {emails.map((email) => (
+                        <div key={email.email} className="flex items-center justify-between p-3 border rounded-lg">
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center gap-2 flex-wrap">
+                              <Mail className="h-4 w-4 text-muted-foreground flex-shrink-0" />
+                              <p className="text-sm font-medium truncate">{email.email}</p>
+                              {email.primary && (
+                                <Badge variant="default" className="flex-shrink-0">
+                                  Primary
+                                </Badge>
+                              )}
+                              {email.verified ? (
+                                <Badge variant="default" className="bg-green-600 flex-shrink-0">
+                                  Verified
+                                </Badge>
+                              ) : (
+                                <Badge variant="secondary" className="flex-shrink-0">
+                                  Unverified
+                                </Badge>
+                              )}
+                            </div>
+                          </div>
+                          <div className="flex gap-2 flex-shrink-0">
+                            {!email.verified && (
+                              <Button variant="outline" size="sm" onClick={() => handleResendCode(email.email)}>
+                                Verify
+                              </Button>
+                            )}
+                            {!email.primary && email.verified && (
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => handleMakePrimary(email.email)}
+                                disabled={makePrimaryMutation.isPending}
+                              >
+                                Make Primary
+                              </Button>
+                            )}
+                            {!email.primary && (
+                              <Button
+                                variant="destructive"
+                                size="sm"
+                                onClick={() => handleRemoveEmail(email.email)}
+                                disabled={removeEmailMutation.isPending}
+                              >
+                                <Trash2 className="h-4 w-4" />
+                              </Button>
+                            )}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
                 </div>
               </>
             )}
+          </CardContent>
+        </Card>
+
+        {/* Password Management */}
+        <Card>
+          <CardHeader>
+            <CardTitle>Password</CardTitle>
+            <CardDescription>Change your password</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <PasswordChangeForm />
           </CardContent>
         </Card>
 
@@ -297,27 +640,53 @@ function AccountPage() {
             <CardTitle>Connected Providers</CardTitle>
             <CardDescription>Manage your authentication providers</CardDescription>
           </CardHeader>
-          <CardContent>
-            {providers.length === 0 ? (
+          <CardContent className="space-y-4">
+            {/* Connected Providers */}
+            {allauthProviders.length === 0 ? (
               <p className="text-sm text-muted-foreground">No providers connected</p>
             ) : (
               <div className="space-y-2">
-                {providers.map((provider) => (
-                  <div key={provider.id} className="flex items-center justify-between p-3 border rounded-lg">
+                {allauthProviders.map((account: SocialAccount) => (
+                  <div key={account.uid} className="flex items-center justify-between p-3 border rounded-lg">
                     <div>
-                      <p className="font-medium capitalize">{provider.provider}</p>
-                      <p className="text-sm text-muted-foreground">{provider.name}</p>
+                      <p className="font-medium capitalize">{account.provider.name}</p>
+                      <p className="text-sm text-muted-foreground">{account.display}</p>
                     </div>
                     <Button
                       variant="destructive"
                       size="sm"
-                      onClick={() => disconnectProviderMutation.mutate(provider.provider)}
-                      disabled={providers.length === 1 && passkeys.length === 0}
+                      onClick={() =>
+                        disconnectProviderMutation.mutate({
+                          providerId: account.provider.id,
+                          accountUid: account.uid,
+                        })
+                      }
+                      disabled={allauthProviders.length === 1 && passkeys.length === 0}
                     >
                       Disconnect
                     </Button>
                   </div>
                 ))}
+              </div>
+            )}
+
+            {/* Available Providers to Connect */}
+            {unconnectedProviders.length > 0 && (
+              <div className="pt-4 border-t">
+                <p className="text-sm font-medium mb-2">Connect Additional Providers</p>
+                <div className="flex flex-wrap gap-2">
+                  {unconnectedProviders.map((provider) => (
+                    <Button
+                      key={provider.id}
+                      variant="outline"
+                      size="sm"
+                      onClick={() => handleConnectProvider(provider.id)}
+                    >
+                      <LinkIcon className="mr-2 h-4 w-4" />
+                      Connect {provider.name}
+                    </Button>
+                  ))}
+                </div>
               </div>
             )}
           </CardContent>
@@ -349,7 +718,7 @@ function AccountPage() {
                       <div>
                         <p className="font-medium">{passkey.label}</p>
                         <p className="text-xs text-muted-foreground">
-                          Last used: {new Date(passkey.lastUsedAt).toLocaleDateString()}
+                          Last used: {passkey.lastUsedAt ? new Date(passkey.lastUsedAt).toLocaleDateString() : 'Never'}
                         </p>
                       </div>
                     </div>
@@ -372,13 +741,82 @@ function AccountPage() {
                           setSelectedPasskey(passkey);
                           setShowDeletePasskeyDialog(true);
                         }}
-                        disabled={passkeys.length === 1 && providers.length === 0}
+                        disabled={passkeys.length === 1 && allauthProviders.length === 0}
                       >
                         <Trash2 className="h-4 w-4" />
                       </Button>
                     </div>
                   </div>
                 ))}
+              </div>
+            )}
+          </CardContent>
+        </Card>
+
+        {/* Active Sessions */}
+        <Card>
+          <CardHeader>
+            <CardTitle>Active Sessions</CardTitle>
+            <CardDescription>Manage devices and sessions where you're currently logged in</CardDescription>
+          </CardHeader>
+          <CardContent>
+            {sessionsLoading ? (
+              <div className="space-y-4">
+                {/* Skeleton loaders */}
+                {[1, 2].map((i) => (
+                  <div key={i} className="border rounded-lg p-4 animate-pulse">
+                    <div className="h-4 bg-muted rounded w-1/3 mb-2"></div>
+                    <div className="h-3 bg-muted rounded w-1/2"></div>
+                  </div>
+                ))}
+              </div>
+            ) : sessions.length === 0 ? (
+              <p className="text-muted-foreground">No active sessions found</p>
+            ) : (
+              <div className="space-y-4">
+                {sessions.map((session) => {
+                  const deviceInfo = parseUserAgent(session.userAgent);
+                  const lastSeen = formatLastSeen(session.lastSeenAt);
+                  const signedIn = formatDate(session.createdAt);
+
+                  return (
+                    <div
+                      key={session.id}
+                      className={`border rounded-lg p-4 ${session.isCurrent ? 'border-green-500 bg-green-50 dark:bg-green-950' : ''}`}
+                    >
+                      <div className="flex items-start justify-between gap-4">
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-2 mb-1">
+                            <Monitor className="h-4 w-4 text-muted-foreground flex-shrink-0" />
+                            <p className="font-medium truncate">{deviceInfo}</p>
+                            {session.isCurrent && (
+                              <span className="px-2 py-0.5 text-xs font-medium bg-green-600 text-white rounded-full flex-shrink-0">
+                                Current Session
+                              </span>
+                            )}
+                          </div>
+                          <div className="space-y-1 text-sm text-muted-foreground">
+                            <p>{lastSeen}</p>
+                            <p>IP: {session.ip}</p>
+                            <p>Signed in: {signedIn}</p>
+                          </div>
+                        </div>
+                        {!session.isCurrent && (
+                          <Button
+                            variant="destructive"
+                            size="sm"
+                            onClick={() => handleTerminateSession(session.id)}
+                            disabled={terminateSessionMutation.isPending}
+                          >
+                            {terminateSessionMutation.isPending && selectedSessionId === session.id
+                              ? 'Ending...'
+                              : 'End Session'}
+                          </Button>
+                        )}
+                      </div>
+                    </div>
+                  );
+                })}
               </div>
             )}
           </CardContent>
@@ -482,6 +920,31 @@ function AccountPage() {
         </DialogContent>
       </Dialog>
 
+      {/* Terminate Session Dialog */}
+      <Dialog open={showTerminateSessionDialog} onOpenChange={setShowTerminateSessionDialog}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>End Session</DialogTitle>
+            <DialogDescription>
+              Are you sure you want to end this session? You will need to log in again on that device.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="flex gap-2">
+            <Button variant="outline" onClick={() => setShowTerminateSessionDialog(false)} className="flex-1">
+              Cancel
+            </Button>
+            <Button
+              variant="destructive"
+              onClick={confirmTerminateSession}
+              disabled={terminateSessionMutation.isPending}
+              className="flex-1"
+            >
+              {terminateSessionMutation.isPending ? 'Ending...' : 'End Session'}
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
       {/* Delete Account Dialog */}
       <Dialog open={showDeleteAccountDialog} onOpenChange={setShowDeleteAccountDialog}>
         <DialogContent>
@@ -503,6 +966,104 @@ function AccountPage() {
               className="flex-1"
             >
               {deleteAccountMutation.isPending ? 'Deleting...' : 'Delete Account'}
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Add Email Dialog */}
+      <Dialog open={showAddEmailDialog} onOpenChange={setShowAddEmailDialog}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Add Email Address</DialogTitle>
+            <DialogDescription>Add a new email address to your account. You'll need to verify it.</DialogDescription>
+          </DialogHeader>
+          <div className="grid gap-4">
+            <div className="grid gap-2">
+              <Label htmlFor="new-email">Email Address</Label>
+              <Input
+                id="new-email"
+                type="email"
+                placeholder="email@example.com"
+                value={newEmailInput}
+                onChange={(e) => setNewEmailInput(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') {
+                    handleAddEmail();
+                  }
+                }}
+              />
+            </div>
+            <div className="flex gap-2">
+              <Button variant="outline" onClick={() => setShowAddEmailDialog(false)} className="flex-1">
+                Cancel
+              </Button>
+              <Button onClick={handleAddEmail} disabled={addEmailMutation.isPending} className="flex-1">
+                {addEmailMutation.isPending ? 'Adding...' : 'Add Email'}
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Verify Email Dialog */}
+      <Dialog open={showVerifyEmailDialog} onOpenChange={setShowVerifyEmailDialog}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Verify Email Address</DialogTitle>
+            <DialogDescription>
+              Enter the verification code sent to <strong>{emailToVerify}</strong>
+            </DialogDescription>
+          </DialogHeader>
+          <div className="grid gap-4">
+            <div className="grid gap-2">
+              <Label htmlFor="verification-code">Verification Code</Label>
+              <Input
+                id="verification-code"
+                type="text"
+                placeholder="Enter code from email"
+                value={verificationCode}
+                onChange={(e) => setVerificationCode(e.target.value.trim())}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') {
+                    handleVerifyEmail();
+                  }
+                }}
+              />
+            </div>
+            <div className="flex gap-2">
+              <Button
+                variant="outline"
+                onClick={handleResendVerificationCode}
+                disabled={resendCodeMutation.isPending}
+                className="flex-1"
+              >
+                {resendCodeMutation.isPending ? 'Sending...' : 'Resend Code'}
+              </Button>
+              <Button onClick={handleVerifyEmail} disabled={verifyEmailMutation.isPending} className="flex-1">
+                {verifyEmailMutation.isPending ? 'Verifying...' : 'Verify'}
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Reauthentication Dialog */}
+      <Dialog open={showReauthDialog} onOpenChange={setShowReauthDialog}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Re-authentication Required</DialogTitle>
+            <DialogDescription>
+              For security reasons, please authenticate with your passkey to continue.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="flex gap-2">
+            <Button variant="outline" onClick={() => setShowReauthDialog(false)} className="flex-1">
+              Cancel
+            </Button>
+            <Button onClick={handleReauthenticate} className="flex-1">
+              <Fingerprint className="mr-2 h-4 w-4" />
+              Authenticate
             </Button>
           </div>
         </DialogContent>

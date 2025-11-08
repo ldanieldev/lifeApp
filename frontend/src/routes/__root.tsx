@@ -2,7 +2,7 @@ import AppShell from '@/components/appShell';
 import { Error404Page, Error500Page } from '@/components/errorPages';
 import { AuthProvider } from '@/providers/authProvider';
 import { ThemeProvider } from '@/providers/themeProvider';
-import { useAuth } from '@/hooks/useAuth';
+import { useAuth } from '@/providers/authProvider';
 import { QueryClient } from '@tanstack/react-query';
 import { ReactQueryDevtools } from '@tanstack/react-query-devtools';
 import { createRootRouteWithContext, Outlet, useRouter, useRouterState } from '@tanstack/react-router';
@@ -24,11 +24,13 @@ function RootComponent() {
   }, [isAuthenticated, isLoading, isAuthRoute, currentPath, router]);
 
   // Redirect authenticated users from auth routes to home
+  // Exception: /auth/create-passkey is allowed for authenticated users during passkey setup
   useEffect(() => {
-    if (!isLoading && isAuthenticated && isAuthRoute) {
+    const isPasskeyCreation = currentPath === '/auth/create-passkey';
+    if (!isLoading && isAuthenticated && isAuthRoute && !isPasskeyCreation) {
       router.navigate({ to: '/', replace: true });
     }
-  }, [isAuthenticated, isLoading, isAuthRoute, router]);
+  }, [isAuthenticated, isLoading, isAuthRoute, currentPath, router]);
 
   // Show logout overlay to prevent white flash
   if (isLoggingOut) {

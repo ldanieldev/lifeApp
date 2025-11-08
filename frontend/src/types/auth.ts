@@ -1,10 +1,11 @@
 export interface User {
-  id: string;
+  id: number;
   email: string;
-  firstName: string;
-  lastName: string;
-  sex?: string;
+  firstName?: string;
+  lastName?: string;
+  sex?: string | null;
   profilePictureUrl?: string;
+  dateJoined: string;
 }
 
 export interface LoginCredentials {
@@ -43,16 +44,21 @@ export interface PasswordChange {
 }
 
 export interface Provider {
-  id: string;
-  provider: string;
-  name: string;
+  uid: string; // Unique ID from OAuth provider (e.g., Google ID)
+  provider: {
+    id: string; // Provider ID (e.g., 'google', 'github')
+    name: string; // Display name (e.g., 'Google', 'GitHub')
+    flows: string[]; // Supported flows
+  };
+  display: string; // Display string (e.g., email or username)
 }
 
 export interface Passkey {
   id: string;
   label: string;
   createdAt: string;
-  lastUsedAt: string;
+  lastUsedAt?: string;
+  isPasswordless?: boolean;
 }
 
 export interface PasskeyRegistrationOptions {

@@ -1,4 +1,4 @@
-import { useAuth } from '@/hooks/useAuth';
+import { useAuth } from '@/providers/authProvider';
 import { Navigate, useRouterState } from '@tanstack/react-router';
 import type { ReactNode } from 'react';
 

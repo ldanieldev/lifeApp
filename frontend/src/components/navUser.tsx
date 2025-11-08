@@ -11,7 +11,7 @@ import {
 } from '@/components/shadcn/dropdown-menu';
 import { SidebarMenu, SidebarMenuButton, SidebarMenuItem, useSidebar } from '@/components/shadcn/sidebar';
 import { BadgeCheckIcon, ChevronsUpDown, LogOutIcon, SettingsIcon, UserIcon } from 'lucide-react';
-import { useAuth } from '@/hooks/useAuth';
+import { useAuth } from '@/providers/authProvider';
 
 export function NavUser() {
   const { isMobile } = useSidebar();

@@ -40,21 +40,21 @@ INSTALLED_APPS = [
     "django.contrib.messages",
     "django.contrib.staticfiles",
     "django.contrib.sites",
-    "django.contrib.humanize",  # Required for allauth passkey templates
     "django_extensions",
     "debug_toolbar",
     "corsheaders",
     "drf_spectacular",
     "rest_framework",
     "django_filters",
-    # allauth apps
+    # django-allauth (headless mode)
     "allauth",
     "allauth.account",
     "allauth.socialaccount",
     "allauth.socialaccount.providers.google",
     "allauth.socialaccount.providers.github",
+    "allauth.mfa",
     "allauth.headless",
-    "allauth.mfa",  # Required for WebAuthn/passkey support
+    "allauth.usersessions",
     # Custom apps
     "users",
     "authentication",
@@ -72,6 +72,9 @@ MIDDLEWARE = [
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
     "allauth.account.middleware.AccountMiddleware",  # Required for allauth
+    "allauth.usersessions.middleware.UserSessionsMiddleware",  # rack user sessions
+    # Transform allauth responses to camelCase
+    "core.middleware.AllauthCamelCaseMiddleware",
 ]
 
 ROOT_URLCONF = "core.urls"
@@ -169,33 +172,60 @@ SITE_ID = 1
 # Custom User Model
 AUTH_USER_MODEL = "users.User"
 
-# django-allauth Configuration
-ACCOUNT_LOGIN_METHODS = {"email"}  # Use email for login
-ACCOUNT_SIGNUP_FIELDS = ["email*", "password1*", "password2*"]  # Required signup fields
-ACCOUNT_EMAIL_VERIFICATION = "mandatory"  # For username/password only
-ACCOUNT_EMAIL_VERIFICATION_BY_CODE_ENABLED = True  # Required for passkey signup
-SOCIALACCOUNT_AUTO_SIGNUP = True
-SOCIALACCOUNT_EMAIL_VERIFICATION = "none"  # Skip email verification for social accounts
-HEADLESS_ONLY = True  # Enable headless mode
+# Authentication Backend
+AUTHENTICATION_BACKENDS = ("allauth.account.auth_backends.AuthenticationBackend",)
 
-# WebAuthn/Passkey Configuration
-MFA_SUPPORTED_TYPES = ["webauthn", "recovery_codes"]  # Enable passkeys
+# django-allauth Headless Configuration
+HEADLESS_ONLY = True  # Disable template-based views
+HEADLESS_FRONTEND_URLS = {
+    "account_confirm_email": "http://localhost:3000/auth/verify-email/{key}",
+    "account_reset_password": "http://localhost:3000/auth/password/reset",
+    "account_reset_password_from_key": "http://localhost:3000/auth/password/reset/{key}",
+    "account_signup": "http://localhost:3000/auth/signup",
+    # OAuth callback - use single callback URL for all providers (not per-provider)
+    "socialaccount_login_error": "http://localhost:3000/auth/oauth/callback",
+}
+# Serve OpenAPI spec at /_allauth/openapi.html
+HEADLESS_SERVE_SPECIFICATION = True
+
+# Account Settings
+ACCOUNT_LOGIN_METHODS = {"email"}  # Use email for login (no username)
+ACCOUNT_USER_MODEL_USERNAME_FIELD = None  # No username field - email only
+ACCOUNT_SIGNUP_FIELDS = ["email*", "password1*", "password2*"]  # Required signup fields
+# Required for email/password accounts
+ACCOUNT_EMAIL_VERIFICATION = "mandatory"
+ACCOUNT_LOGIN_BY_CODE_ENABLED = True  # Magic link login
+ACCOUNT_EMAIL_VERIFICATION_BY_CODE_ENABLED = True  # Code-based verification
+# Allow resending verification codes
+ACCOUNT_EMAIL_VERIFICATION_SUPPORTS_RESEND = True
+ACCOUNT_LOGOUT_ON_PASSWORD_CHANGE = False
+
+# Social Account Settings
+SOCIALACCOUNT_AUTO_SIGNUP = True  # Auto-create account from social login
+# Skip verification for social accounts
+SOCIALACCOUNT_EMAIL_VERIFICATION = "none"
+SOCIALACCOUNT_QUERY_EMAIL = True  # Auto-link by email across providers
+SOCIALACCOUNT_STORE_TOKENS = True  # Store OAuth tokens for profile sync
+# Allow login via OAuth with matching email
+SOCIALACCOUNT_EMAIL_AUTHENTICATION = True
+# Auto-link OAuth to existing account with same email
+SOCIALACCOUNT_EMAIL_AUTHENTICATION_AUTO_CONNECT = True
+
+# MFA/WebAuthn/Passkey Configuration
+MFA_SUPPORTED_TYPES = ["totp", "recovery_codes", "webauthn"]
 MFA_PASSKEY_LOGIN_ENABLED = True  # Allow login with passkey
 MFA_PASSKEY_SIGNUP_ENABLED = True  # Allow signup with passkey
 
-# JWT Settings
-JWT_SECRET_KEY = env("JWT_SECRET_KEY", default=SECRET_KEY)
-JWT_ACCESS_TOKEN_LIFETIME = env.int("JWT_ACCESS_TOKEN_LIFETIME", default=15)  # minutes
-JWT_REFRESH_TOKEN_LIFETIME = env.int("JWT_REFRESH_TOKEN_LIFETIME", default=7)  # days
-JWT_ALGORITHM = "HS256"
+# User Sessions Configuration
+# Track IP address, user agent, and last seen timestamp
+USERSESSIONS_TRACK_ACTIVITY = True
 
 # OAuth Provider Configuration
+# NOTE: OAuth providers are configured via SocialApp database entries, not here.
+# See: python manage.py shell -> SocialApp.objects.all()
+# Run: python manage.py setup_oauth_providers
 SOCIALACCOUNT_PROVIDERS = {
     "google": {
-        "APP": {
-            "client_id": env("GOOGLE_CLIENT_ID", default=""),
-            "secret": env("GOOGLE_CLIENT_SECRET", default=""),
-        },
         "SCOPE": [
             "profile",
             "email",
@@ -205,10 +235,6 @@ SOCIALACCOUNT_PROVIDERS = {
         },
     },
     "github": {
-        "APP": {
-            "client_id": env("GITHUB_CLIENT_ID", default=""),
-            "secret": env("GITHUB_CLIENT_SECRET", default=""),
-        },
         "SCOPE": [
             "user",
             "user:email",
@@ -229,11 +255,10 @@ REST_FRAMEWORK = {
     ],
     "DEFAULT_AUTHENTICATION_CLASSES": [
         "rest_framework.authentication.SessionAuthentication",
-        "authentication.authentication.JWTAuthentication",
+        # XSessionTokenAuthentication can be added here for mobile app mode
     ],
     "DEFAULT_PAGINATION_CLASS": "rest_framework.pagination.PageNumberPagination",
     "PAGE_SIZE": 10,
-    "EXCEPTION_HANDLER": "authentication.exceptions.custom_exception_handler",
 }
 
 SPECTACULAR_SETTINGS = {
@@ -251,13 +276,18 @@ if DEBUG:
     MIDDLEWARE.insert(0, "debug_toolbar.middleware.DebugToolbarMiddleware")
 
     # Browsable API renderer with camelCase support
-    REST_FRAMEWORK["DEFAULT_RENDERER_CLASSES"].append("djangorestframework_camel_case.render.CamelCaseBrowsableAPIRenderer")
+    REST_FRAMEWORK["DEFAULT_RENDERER_CLASSES"].append(
+        "djangorestframework_camel_case.render.CamelCaseBrowsableAPIRenderer"
+    )
 
     # Development email - Mailhog
     EMAIL_HOST = env("EMAIL_HOST", default="mailhog")
     EMAIL_PORT = env.int("EMAIL_PORT", default=1025)
     EMAIL_USE_TLS = False
     EMAIL_USE_SSL = False
+
+    # CSRF trusted origins for development (frontend on different port)
+    CSRF_TRUSTED_ORIGINS = env.list("CSRF_TRUSTED_ORIGINS", default=["http://localhost:3000", "http://127.0.0.1:3000"])
 
     # Allow insecure origin for WebAuthn in development (localhost)
     MFA_WEBAUTHN_ALLOW_INSECURE_ORIGIN = True

@@ -11,5 +11,5 @@ class AuthenticationConfig(AppConfig):
     verbose_name = "Authentication"
 
     def ready(self):
-        """Import schema extensions when app is ready."""
-        import authentication.schema  # noqa: F401
+        """Import signal handlers when app is ready."""
+        import authentication.signals  # noqa: F401

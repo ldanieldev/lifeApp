@@ -5,7 +5,8 @@
   "workspaceFolder": "/workspace",
   "forwardPorts": [
     8000, // Django
-    3000, // React
+    3000, // React dev server
+    4173, // React preview server (production build)
     5432, // PostgreSQL
     6379, // Redis
     5540, // Redis Insight
@@ -38,7 +39,6 @@
         "Gruntfuggly.todo-tree",
         "richie5um2.vscode-sort-json",
         "esbenp.prettier-vscode",
-        "ChakrounAnas.turbo-console-log",
         "njpwerner.autodocstring",
         "cweijan.vscode-postgresql-client2"
       ]

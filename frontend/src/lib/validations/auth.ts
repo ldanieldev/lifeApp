@@ -1,6 +1,12 @@
 import { z } from 'zod';
 
-const passwordRegex = /^(?=.*[a-zA-Z])(?=.*[0-9])(?=.*[!@#$%^&*])[a-zA-Z0-9!@#$%^&*]{8,16}$/;
+// Password requirements matching backend Django validators + special character requirement
+// - Min 8 characters
+// - Must contain at least one special character (!@#$%^&*(),.?":{}|<>)
+const passwordValidation = z
+  .string()
+  .min(8, 'Must be at least 8 characters')
+  .regex(/[!@#$%^&*(),.?":{}|<>]/, 'Must contain a special character');
 
 export const loginSchema = z.object({
   email: z.string().email('Invalid email address'),
@@ -9,13 +15,7 @@ export const loginSchema = z.object({
 
 export const registerSchema = z.object({
   email: z.string().email('Invalid email address'),
-  password: z
-    .string()
-    .min(8, 'Password must be at least 8 characters')
-    .max(16, 'Password must be at most 16 characters')
-    .regex(passwordRegex, 'Password must contain letters, numbers, and at least one special character (!@#$%^&*)'),
-  firstName: z.string().min(1, 'First name is required'),
-  lastName: z.string().min(1, 'Last name is required'),
+  password: passwordValidation,
 });
 
 export const passwordResetRequestSchema = z.object({
@@ -24,11 +24,7 @@ export const passwordResetRequestSchema = z.object({
 
 export const passwordResetConfirmSchema = z
   .object({
-    password: z
-      .string()
-      .min(8, 'Password must be at least 8 characters')
-      .max(16, 'Password must be at most 16 characters')
-      .regex(passwordRegex, 'Password must contain letters, numbers, and at least one special character (!@#$%^&*)'),
+    password: passwordValidation,
     confirmPassword: z.string(),
   })
   .refine((data) => data.password === data.confirmPassword, {
@@ -39,11 +35,7 @@ export const passwordResetConfirmSchema = z
 export const passwordChangeSchema = z
   .object({
     oldPassword: z.string().min(1, 'Current password is required'),
-    newPassword: z
-      .string()
-      .min(8, 'Password must be at least 8 characters')
-      .max(16, 'Password must be at most 16 characters')
-      .regex(passwordRegex, 'Password must contain letters, numbers, and at least one special character (!@#$%^&*)'),
+    newPassword: passwordValidation,
     confirmPassword: z.string(),
   })
   .refine((data) => data.newPassword === data.confirmPassword, {
@@ -54,7 +46,7 @@ export const passwordChangeSchema = z
 export const userProfileUpdateSchema = z.object({
   firstName: z.string().min(1, 'First name is required').max(150, 'First name is too long'),
   lastName: z.string().min(1, 'Last name is required').max(150, 'Last name is too long'),
-  sex: z.enum(['M', 'F', 'O']).optional().nullable(),
+  sex: z.enum(['M', 'F', 'O', 'N', '']).optional(),
 });
 
 export type LoginFormData = z.infer<typeof loginSchema>;
