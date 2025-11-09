@@ -8,6 +8,8 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { authAPI } from '@/api/allauth';
 import type { AuthFlow } from '@/api/allauth.types';
 import { useAuth } from '@/providers/authProvider';
+import { getAllauthErrors } from '@/lib/errors';
+import { isAxiosError } from 'axios';
 
 export const Route = createFileRoute('/auth/verify-email')({
   component: VerifyEmailPage,
@@ -54,10 +56,10 @@ function VerifyEmailPage() {
         // Regular email verification, user is logged in
         navigate({ to: '/' });
       }
-    } catch (error: any) {
+    } catch (error: unknown) {
       // Check if this is a 401 with pending passkey signup flow
-      if (error?.response?.status === 401) {
-        const flows = error?.response?.data?.data?.flows || [];
+      if (isAxiosError(error) && error.response?.status === 401) {
+        const flows = error.response.data?.data?.flows || [];
         const passkeySignupFlow = flows.find((flow: AuthFlow) => flow.id === 'mfa_signup_webauthn' && flow.isPending);
 
         if (passkeySignupFlow) {
@@ -69,9 +71,8 @@ function VerifyEmailPage() {
       }
 
       // Handle other errors
-      const errors = error?.response?.data?.errors;
-      const errorMessage =
-        errors?.[0]?.message || error?.response?.data?.message || 'Invalid or expired verification code';
+      const errors = getAllauthErrors(error);
+      const errorMessage = errors[0]?.message || 'Invalid or expired verification code';
       toast.error(errorMessage);
     } finally {
       setIsLoading(false);
@@ -83,13 +84,10 @@ function VerifyEmailPage() {
     try {
       await authAPI.resendEmailVerificationCode();
       toast.success('Verification code sent! Please check your email.');
-    } catch (error: any) {
+    } catch (error: unknown) {
       // Handle allauth error format: { errors: [{ message, code, param? }] }
-      const errors = error?.response?.data?.errors;
-      const errorMessage =
-        errors?.[0]?.message ||
-        error?.response?.data?.message ||
-        'Failed to resend verification code. Please try again.';
+      const errors = getAllauthErrors(error);
+      const errorMessage = errors[0]?.message || 'Failed to resend verification code. Please try again.';
       toast.error(errorMessage);
     } finally {
       setIsResending(false);

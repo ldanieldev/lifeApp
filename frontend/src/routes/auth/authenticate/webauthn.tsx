@@ -1,43 +1,45 @@
 import { createFileRoute, useNavigate } from '@tanstack/react-router';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { toast } from 'sonner';
 import { Fingerprint } from 'lucide-react';
 import { Button } from '@/components/shadcn/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/shadcn/card';
 import { webAuthnAPI } from '@/api/allauth';
 import { useAuth } from '@/providers/authProvider';
+import { getAllauthErrors } from '@/lib/errors';
+import type { AuthFlow } from '@/api/allauth.types';
 
 export const Route = createFileRoute('/auth/authenticate/webauthn')({
   component: AuthenticateWebAuthnPage,
 });
-
-// Use a module-level variable to track if authentication has been triggered
-let authenticationTriggered = false;
 
 function AuthenticateWebAuthnPage() {
   const navigate = useNavigate();
   const { refetchUser, auth } = useAuth();
   const [isLoading, setIsLoading] = useState(false);
 
+  // Use a ref to track if authentication has been triggered (prevents double triggers in StrictMode)
+  const authenticationTriggeredRef = useRef(false);
+
   // Check if we have a pending MFA authentication flow
   const hasPendingMFAAuth = auth?.data?.flows?.some(
-    (flow: any) => flow.id === 'mfa_authenticate' && flow.isPending && flow.types?.includes('webauthn')
+    (flow: AuthFlow) => flow.id === 'mfa_authenticate' && flow.isPending && flow.types?.includes('webauthn')
   );
 
   // Redirect to login if no pending MFA flow (use effect to avoid render-time navigation)
   useEffect(() => {
     if (!hasPendingMFAAuth && !isLoading) {
-      authenticationTriggered = false; // Reset since we're leaving
+      authenticationTriggeredRef.current = false; // Reset since we're leaving
       navigate({ to: '/auth/login', search: { redirect: '/' } });
     }
   }, [hasPendingMFAAuth, isLoading, navigate]);
 
   const handleAuthenticate = async () => {
     // Prevent multiple simultaneous authentication attempts
-    if (authenticationTriggered) {
+    if (authenticationTriggeredRef.current) {
       return;
     }
-    authenticationTriggered = true;
+    authenticationTriggeredRef.current = true;
 
     setIsLoading(true);
     try {
@@ -63,28 +65,35 @@ function AuthenticateWebAuthnPage() {
         // If not authenticated after MFA, something went wrong
         console.error('Not authenticated after MFA:', sessionData);
         toast.error('Authentication incomplete. Please try again.');
-        authenticationTriggered = false; // Allow retry
+        authenticationTriggeredRef.current = false; // Allow retry
         navigate({ to: '/auth/login', search: { redirect: '/' } });
       }
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('WebAuthn authentication error:', error);
+      const errors = getAllauthErrors(error);
       const errorMessage =
-        error?.response?.data?.errors?.[0]?.message || error?.message || 'Failed to authenticate with passkey';
+        errors?.[0]?.message || (error instanceof Error ? error.message : 'Failed to authenticate with passkey');
       toast.error(errorMessage);
-      authenticationTriggered = false; // Allow retry
+      authenticationTriggeredRef.current = false; // Allow retry
       setIsLoading(false);
     }
   };
 
   // Auto-trigger passkey authentication on mount
+  // Using useEffect with no state updates to schedule authentication
   useEffect(() => {
-    if (hasPendingMFAAuth && !authenticationTriggered) {
-      handleAuthenticate();
+    if (hasPendingMFAAuth && !authenticationTriggeredRef.current) {
+      // Schedule authentication to run after render completes
+      // This avoids calling setState synchronously within the effect
+      queueMicrotask(() => {
+        handleAuthenticate();
+      });
     }
-    // Note: We don't reset authenticationTriggered on unmount because:
+    // Note: We don't reset authenticationTriggeredRef on unmount because:
     // 1. React StrictMode in dev would cause double-prompts
     // 2. We reset it on error/cancel to allow retry
     // 3. On success, we navigate away anyway
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [hasPendingMFAAuth]);
 
   // Show loading or nothing while checking/redirecting
@@ -123,7 +132,7 @@ function AuthenticateWebAuthnPage() {
                   variant="link"
                   className="text-sm text-muted-foreground"
                   onClick={() => {
-                    authenticationTriggered = false; // Reset on manual navigation
+                    authenticationTriggeredRef.current = false; // Reset on manual navigation
                     navigate({ to: '/auth/login', search: { redirect: '/' } });
                   }}
                   disabled={isLoading}

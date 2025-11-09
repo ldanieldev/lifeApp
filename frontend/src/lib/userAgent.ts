@@ -55,7 +55,7 @@ export function getDeviceType(userAgent: string): 'mobile' | 'tablet' | 'desktop
 
     // If no device type, assume desktop
     return 'desktop';
-  } catch (error) {
+  } catch {
     return 'unknown';
   }
 }

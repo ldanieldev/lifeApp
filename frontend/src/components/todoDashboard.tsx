@@ -102,6 +102,39 @@ interface TodoItemProps {
   compact?: boolean;
 }
 
+// Helper components defined outside to avoid recreation on each render
+const ViewHeader: React.FC<ViewHeaderProps> = ({ title, description, children }) => (
+  <div className="flex flex-col space-y-4 sm:flex-row sm:items-center sm:justify-between sm:space-y-0">
+    <div>
+      <h2 className="text-xl font-semibold tracking-tight">{title}</h2>
+      {description && <p className="text-sm text-muted-foreground">{description}</p>}
+    </div>
+    {children}
+  </div>
+);
+
+const StatCard: React.FC<StatCardProps> = ({ title, value, description, icon: Icon, trend }) => (
+  <Card>
+    <CardContent className="p-4">
+      <div className="flex items-center justify-between">
+        <div className="space-y-1">
+          <p className="text-sm font-medium leading-none">{title}</p>
+          <div className="flex items-center space-x-2">
+            <p className="text-2xl font-bold">{value}</p>
+            {trend && (
+              <Badge variant="secondary" className="text-xs">
+                {trend}
+              </Badge>
+            )}
+          </div>
+          {description && <p className="text-xs text-muted-foreground">{description}</p>}
+        </div>
+        <Icon className="h-4 w-4 text-muted-foreground" />
+      </div>
+    </CardContent>
+  </Card>
+);
+
 const TodoDashboard: React.FC = () => {
   const [lists, setLists] = useState<TodoList[]>([
     {
@@ -149,7 +182,7 @@ const TodoDashboard: React.FC = () => {
   const [isAddingList, setIsAddingList] = useState<boolean>(false);
   const [searchQuery, setSearchQuery] = useState<string>('');
 
-  const priorityColors: Record<Priority, string> = {
+  const priorityColors: Record<Priority, 'destructive' | 'default' | 'secondary'> = {
     high: 'destructive',
     medium: 'default',
     low: 'secondary',
@@ -283,38 +316,6 @@ const TodoDashboard: React.FC = () => {
   const upcomingTasks = getUpcomingTasks();
   const filteredTodos = getFilteredTodos();
 
-  const ViewHeader: React.FC<ViewHeaderProps> = ({ title, description, children }) => (
-    <div className="flex flex-col space-y-4 sm:flex-row sm:items-center sm:justify-between sm:space-y-0">
-      <div>
-        <h2 className="text-xl font-semibold tracking-tight">{title}</h2>
-        {description && <p className="text-sm text-muted-foreground">{description}</p>}
-      </div>
-      {children}
-    </div>
-  );
-
-  const StatCard: React.FC<StatCardProps> = ({ title, value, description, icon: Icon, trend }) => (
-    <Card>
-      <CardContent className="p-4">
-        <div className="flex items-center justify-between">
-          <div className="space-y-1">
-            <p className="text-sm font-medium leading-none">{title}</p>
-            <div className="flex items-center space-x-2">
-              <p className="text-2xl font-bold">{value}</p>
-              {trend && (
-                <Badge variant="secondary" className="text-xs">
-                  {trend}
-                </Badge>
-              )}
-            </div>
-            {description && <p className="text-xs text-muted-foreground">{description}</p>}
-          </div>
-          <Icon className="h-4 w-4 text-muted-foreground" />
-        </div>
-      </CardContent>
-    </Card>
-  );
-
   const TodoItem: React.FC<TodoItemProps> = ({ todo, showList = false, compact = false }) => {
     const isExtendedTodo = (t: Todo | ExtendedTodo): t is ExtendedTodo => {
       return 'listName' in t && 'listColor' in t;
@@ -337,7 +338,7 @@ const TodoDashboard: React.FC = () => {
                   </Badge>
                 </div>
               )}
-              <Badge variant={priorityColors[todo.priority] as any} className="text-xs px-1.5 py-0">
+              <Badge variant={priorityColors[todo.priority]} className="text-xs px-1.5 py-0">
                 {todo.priority}
               </Badge>
               {todo.dueDate && (

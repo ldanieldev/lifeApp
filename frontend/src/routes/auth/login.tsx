@@ -4,6 +4,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { useState } from 'react';
 import { toast } from 'sonner';
 import { Fingerprint, Loader2, WifiOff } from 'lucide-react';
+import { isAxiosError } from 'axios';
 import { Button } from '@/components/shadcn/button';
 import { Input } from '@/components/shadcn/input';
 import { PasswordInput } from '@/components/passwordInput';
@@ -14,6 +15,7 @@ import { useAuth } from '@/providers/authProvider';
 import { usePasskey } from '@/hooks/usePasskey';
 import { loginSchema, type LoginFormData } from '@/lib/validations/auth';
 import { getRouteForPendingFlow } from '@/lib/authFlows';
+import { getAllauthErrors, isNetworkError as checkIsNetworkError } from '@/lib/errors';
 
 export const Route = createFileRoute('/auth/login')({
   component: LoginPage,
@@ -76,14 +78,9 @@ function LoginPage() {
           toast.error('Authentication incomplete. Please try again.');
         }
       }
-    } catch (error: any) {
+    } catch (error: unknown) {
       // Check for network errors
-      // Network error if: no response, or 5xx with no response data (proxy can't reach backend)
-      const status = error?.response?.status;
-      const hasResponseData = error?.response?.data && Object.keys(error.response.data).length > 0;
-      const isNetworkError = !error?.response || (status >= 500 && !hasResponseData);
-
-      if (isNetworkError) {
+      if (checkIsNetworkError(error)) {
         toast.error('Unable to connect to the server. Please check your internet connection and try again.', {
           icon: <WifiOff className="h-4 w-4" />,
           action: {
@@ -95,7 +92,8 @@ function LoginPage() {
       }
 
       // Handle server errors with better messages
-      const errors = error?.response?.data?.errors;
+      const errors = getAllauthErrors(error);
+      const status = isAxiosError(error) ? error.response?.status : undefined;
       let errorMessage: string;
 
       if (status === 401) {
@@ -104,12 +102,12 @@ function LoginPage() {
       } else if (status === 429) {
         // Rate limited
         errorMessage = 'Too many login attempts. Please wait a few minutes and try again.';
-      } else if (status >= 500) {
+      } else if (status && status >= 500) {
         // Server error (backend responded but encountered an error)
         errorMessage = 'Server error. Please try again in a moment.';
       } else {
         // Use server-provided message or fallback
-        errorMessage = errors?.[0]?.message || error?.response?.data?.message || 'Login failed. Please try again.';
+        errorMessage = errors?.[0]?.message || 'Login failed. Please try again.';
       }
 
       toast.error(errorMessage);
@@ -185,7 +183,7 @@ function LoginPage() {
                       // Redirect to intended destination, or home if redirect is an auth route
                       const destination = redirect && !redirect.startsWith('/auth') ? redirect : '/';
                       navigate({ to: destination });
-                    } catch (error) {
+                    } catch {
                       // Error already handled in hook
                     }
                   }}

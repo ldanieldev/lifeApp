@@ -160,7 +160,7 @@ export interface WebAuthnRequestOptionsResponse {
 }
 
 export interface WebAuthnCredentialRequest {
-  credential: Record<string, any>; // PublicKeyCredential in JSON format
+  credential: Record<string, unknown>; // PublicKeyCredential in JSON format
   name?: string;
 }
 

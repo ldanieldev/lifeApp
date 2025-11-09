@@ -75,7 +75,7 @@ function OAuthCallback() {
             navigate({ to: '/auth/login', search: { redirect: '/' } });
           }
         }
-      } catch (error: any) {
+      } catch (error: unknown) {
         console.error('OAuth callback error:', error);
         // If session fetch failed, authentication didn't work
         toast.error('Authentication failed. Please try again.');

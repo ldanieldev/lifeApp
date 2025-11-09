@@ -1,5 +1,5 @@
 import { emailAPI, sessionAPI, socialAccountAPI, webAuthnAPI } from '@/api/allauth';
-import type { EmailAddress, SocialAccount, UserSession } from '@/api/allauth.types';
+import type { AuthFlow, EmailAddress, SocialAccount, UserSession } from '@/api/allauth.types';
 import { authApi } from '@/api/auth';
 import { PasswordChangeForm } from '@/components/passwordChangeForm';
 import { ProtectedRoute } from '@/components/protectedRoute';
@@ -11,6 +11,7 @@ import { Input } from '@/components/shadcn/input';
 import { Label } from '@/components/shadcn/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/shadcn/select';
 import { usePasskey } from '@/hooks/usePasskey';
+import { getAllauthErrors, isNetworkError } from '@/lib/errors';
 import { formatDate, formatLastSeen } from '@/lib/formatTime';
 import { parseUserAgent } from '@/lib/userAgent';
 import { userProfileUpdateSchema, type UserProfileUpdateFormData } from '@/lib/validations/auth';
@@ -19,6 +20,7 @@ import type { Passkey } from '@/types/auth';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { createFileRoute } from '@tanstack/react-router';
+import axios from 'axios';
 import {
   Edit2,
   Fingerprint,
@@ -45,12 +47,9 @@ export const Route = createFileRoute('/account')({
 });
 
 // Helper function for consistent error handling across all mutations
-const handleMutationError = (error: any, fallbackMessage: string, retryFn?: () => void) => {
-  const status = error?.response?.status;
-  const hasResponseData = error?.response?.data && Object.keys(error.response.data).length > 0;
-  const isNetworkError = !error?.response || (status >= 500 && !hasResponseData);
-
-  if (isNetworkError) {
+const handleMutationError = (error: unknown, fallbackMessage: string, retryFn?: () => void) => {
+  // Check if it's a network error
+  if (isNetworkError(error)) {
     toast.error('Unable to connect to the server. Please check your internet connection and try again.', {
       icon: <WifiOff className="h-4 w-4" />,
       ...(retryFn && {
@@ -63,16 +62,26 @@ const handleMutationError = (error: any, fallbackMessage: string, retryFn?: () =
     return;
   }
 
-  // Handle server errors with better messages
-  const errors = error?.response?.data?.errors;
+  // Extract allauth errors if available
+  const allauthErrors = getAllauthErrors(error);
   let errorMessage: string;
 
-  if (status === 429) {
-    errorMessage = 'Too many requests. Please wait a few minutes and try again.';
-  } else if (status >= 500) {
-    errorMessage = 'Server error. Please try again in a moment.';
+  if (axios.isAxiosError(error)) {
+    const status = error.response?.status;
+
+    if (status === 429) {
+      errorMessage = 'Too many requests. Please wait a few minutes and try again.';
+    } else if (status && status >= 500) {
+      errorMessage = 'Server error. Please try again in a moment.';
+    } else if (allauthErrors && allauthErrors.length > 0) {
+      errorMessage = allauthErrors[0].message;
+    } else {
+      errorMessage = error.response?.data?.message || fallbackMessage;
+    }
+  } else if (error instanceof Error) {
+    errorMessage = error.message;
   } else {
-    errorMessage = errors?.[0]?.message || error?.response?.data?.message || fallbackMessage;
+    errorMessage = fallbackMessage;
   }
 
   toast.error(errorMessage);
@@ -172,7 +181,7 @@ function AccountPage() {
       setIsEditingProfile(false);
       toast.success('Profile updated successfully');
     },
-    onError: (error: any) => {
+    onError: (error: unknown) => {
       handleMutationError(error, 'Failed to update profile');
     },
   });
@@ -190,10 +199,16 @@ function AccountPage() {
   });
 
   // Helper to check if error requires reauthentication
-  const requiresReauth = (error: any) => {
+  const requiresReauth = (error: unknown) => {
+    if (!axios.isAxiosError(error)) {
+      return false;
+    }
+
+    const flows = error.response?.data?.data?.flows;
     return (
-      error?.response?.status === 401 &&
-      error?.response?.data?.data?.flows?.some((flow: any) => flow.id === 'mfa_reauthenticate')
+      error.response?.status === 401 &&
+      Array.isArray(flows) &&
+      flows.some((flow: AuthFlow) => flow.id === 'mfa_reauthenticate')
     );
   };
 
@@ -207,7 +222,7 @@ function AccountPage() {
       setPasskeyLabel('');
       toast.success('Passkey renamed');
     },
-    onError: (error: any) => {
+    onError: (error: unknown) => {
       if (requiresReauth(error)) {
         // Store the operation to retry after reauthentication
         setPendingOperation(() => () => handleRenamePasskey());
@@ -227,7 +242,7 @@ function AccountPage() {
       setSelectedPasskey(null);
       toast.success('Passkey deleted');
     },
-    onError: (error: any) => {
+    onError: (error: unknown) => {
       if (requiresReauth(error)) {
         // Store the operation to retry after reauthentication
         setPendingOperation(() => () => handleDeletePasskey());
@@ -251,7 +266,7 @@ function AccountPage() {
         pendingOperation();
         setPendingOperation(null);
       }
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Reauthentication error:', error);
       handleMutationError(error, 'Failed to re-authenticate. Please try again.');
     }
@@ -265,7 +280,7 @@ function AccountPage() {
       queryClient.invalidateQueries({ queryKey: ['providers'] });
       toast.success('Provider disconnected');
     },
-    onError: (error: any) => {
+    onError: (error: unknown) => {
       handleMutationError(error, 'Failed to disconnect provider');
     },
   });
@@ -279,7 +294,7 @@ function AccountPage() {
       setSelectedSessionId(null);
       toast.success('Session terminated successfully');
     },
-    onError: (error: any) => {
+    onError: (error: unknown) => {
       handleMutationError(error, 'Failed to terminate session');
     },
   });
@@ -291,7 +306,7 @@ function AccountPage() {
       toast.success('Account deleted');
       await logout();
     },
-    onError: (error: any) => {
+    onError: (error: unknown) => {
       handleMutationError(error, 'Failed to delete account');
     },
   });
@@ -307,7 +322,7 @@ function AccountPage() {
       // User can click "Verify" button on the email in the list
       toast.success('Verification code sent! Check your email and click Verify.');
     },
-    onError: (error: any) => {
+    onError: (error: unknown) => {
       handleMutationError(error, 'Failed to add email');
     },
   });
@@ -322,7 +337,7 @@ function AccountPage() {
       toast.success('Email verified successfully');
       refetchUser();
     },
-    onError: (error: any) => {
+    onError: (error: unknown) => {
       handleMutationError(error, 'Invalid verification code');
     },
   });
@@ -332,7 +347,7 @@ function AccountPage() {
     onSuccess: (_, email) => {
       toast.success('Verification code sent to ' + email);
     },
-    onError: (error: any) => {
+    onError: (error: unknown) => {
       handleMutationError(error, 'Failed to send verification code');
     },
   });
@@ -344,7 +359,7 @@ function AccountPage() {
       toast.success('Primary email updated');
       refetchUser();
     },
-    onError: (error: any) => {
+    onError: (error: unknown) => {
       handleMutationError(error, 'Failed to update primary email');
     },
   });
@@ -355,7 +370,7 @@ function AccountPage() {
       queryClient.invalidateQueries({ queryKey: ['emails'] });
       toast.success('Email address removed');
     },
-    onError: (error: any) => {
+    onError: (error: unknown) => {
       handleMutationError(error, 'Failed to remove email');
     },
   });

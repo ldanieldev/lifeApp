@@ -21,5 +21,26 @@ export default tseslint.config([
       ecmaVersion: 2020,
       globals: globals.browser,
     },
+    rules: {
+      // Keep enabled globally with allowConstantExport for better Fast Refresh
+      'react-refresh/only-export-components': ['warn', { allowConstantExport: true }],
+    },
+  },
+  {
+    // Shadcn UI components - allow exporting variants alongside components
+    files: ['src/components/shadcn/**/*.tsx'],
+    rules: {
+      'react-refresh/only-export-components': 'off',
+      'react-hooks/rules-of-hooks': 'off', // Shadcn components may have non-standard patterns
+      'react-compiler/react-compiler': 'off', // Disable React Compiler rules for third-party components
+      'react-hooks/purity': 'off', // Allow impure functions like Math.random() in shadcn components
+    },
+  },
+  {
+    // Provider files - must export both provider component and hooks (standard React pattern)
+    files: ['src/providers/**/*.tsx'],
+    rules: {
+      'react-refresh/only-export-components': 'off',
+    },
   },
 ]);

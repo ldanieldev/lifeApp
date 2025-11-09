@@ -11,6 +11,7 @@ import type {
   PasswordChange,
   Passkey,
 } from '@/types/auth';
+import type { Authenticator } from './allauth.types';
 
 export const authApi = {
   // Authentication
@@ -115,12 +116,12 @@ export const authApi = {
 
   // Passkeys (using allauth MFA WebAuthn endpoints)
   getPasskeys: async (): Promise<Passkey[]> => {
-    const response = await lifeAppApi.get<{ data: any[] }>('/_allauth/browser/v1/account/authenticators');
+    const response = await lifeAppApi.get<{ data: Authenticator[] }>('/_allauth/browser/v1/account/authenticators');
 
     // Filter only webauthn authenticators and transform to Passkey format
-    const webauthnAuthenticators = response.data.data.filter((auth: any) => auth.type === 'webauthn');
+    const webauthnAuthenticators = response.data.data.filter((auth) => auth.type === 'webauthn');
 
-    return webauthnAuthenticators.map((auth: any) => ({
+    return webauthnAuthenticators.map((auth) => ({
       id: auth.id,
       label: auth.name,
       createdAt: new Date(auth.createdAt * 1000).toISOString(),

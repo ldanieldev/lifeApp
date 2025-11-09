@@ -1,9 +1,11 @@
 import { authAPI } from '@/api/allauth';
+import type { AllauthError } from '@/api/allauth.types';
 import { PasswordInput } from '@/components/passwordInput';
 import { PasswordStrengthIndicator } from '@/components/passwordStrengthIndicator';
 import { Button } from '@/components/shadcn/button';
 import { Label } from '@/components/shadcn/label';
 import { zodResolver } from '@hookform/resolvers/zod';
+import { isAxiosError } from 'axios';
 import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { toast } from 'sonner';
@@ -55,24 +57,29 @@ export function PasswordChangeForm() {
       });
       toast.success('Password changed successfully');
       reset();
-    } catch (error: any) {
+    } catch (error: unknown) {
       // Handle allauth error format: { errors: [{ message, code, param? }] }
-      const errors = error?.response?.data?.errors;
+      if (isAxiosError(error)) {
+        const errors = error.response?.data?.errors as AllauthError[] | undefined;
 
-      if (errors && Array.isArray(errors)) {
-        // Map backend errors to form fields
-        errors.forEach((err: any) => {
-          if (err.param === 'currentPassword' || err.param === 'current_password') {
-            setError('currentPassword', { message: err.message });
-          } else if (err.param === 'newPassword' || err.param === 'new_password' || err.param === 'password') {
-            setError('newPassword', { message: err.message });
-          } else {
-            // Generic error, show as toast
-            toast.error(err.message || 'Failed to change password');
-          }
-        });
+        if (errors && Array.isArray(errors)) {
+          // Map backend errors to form fields
+          errors.forEach((err) => {
+            if (err.param === 'currentPassword' || err.param === 'current_password') {
+              setError('currentPassword', { message: err.message });
+            } else if (err.param === 'newPassword' || err.param === 'new_password' || err.param === 'password') {
+              setError('newPassword', { message: err.message });
+            } else {
+              // Generic error, show as toast
+              toast.error(err.message || 'Failed to change password');
+            }
+          });
+        } else {
+          // Axios error but unexpected format
+          toast.error('Failed to change password. Please try again.');
+        }
       } else {
-        // Network error or unexpected format
+        // Network error or unexpected error
         toast.error('Failed to change password. Please try again.');
       }
     } finally {

@@ -14,6 +14,8 @@ import { SocialLoginButtons } from '@/components/socialLoginButtons';
 import { useAuth } from '@/providers/authProvider';
 import { usePasskey } from '@/hooks/usePasskey';
 import { registerSchema, type RegisterFormData } from '@/lib/validations/auth';
+import { getAllauthErrors, isNetworkError as checkIsNetworkError } from '@/lib/errors';
+import type { AuthFlow } from '@/api/allauth.types';
 
 export const Route = createFileRoute('/auth/register')({
   component: RegisterPage,
@@ -55,7 +57,7 @@ function RegisterPage() {
       // Check if email verification is needed (status 401 with verify_email flow)
       if (sessionData.status === 401) {
         const flows = sessionData.data?.flows || [];
-        const verifyEmailFlow = flows.find((flow: any) => flow.id === 'verify_email');
+        const verifyEmailFlow = flows.find((flow: AuthFlow) => flow.id === 'verify_email');
 
         if (verifyEmailFlow?.isPending) {
           toast.success('Please check your email for verification code.');
@@ -67,13 +69,9 @@ function RegisterPage() {
       // Success - registration complete
       toast.success('Registration successful! Please check your email for verification code.');
       navigate({ to: '/auth/verify-email', search: { email: data.email } });
-    } catch (error: any) {
+    } catch (error: unknown) {
       // Check for network errors
-      const status = error?.response?.status;
-      const hasResponseData = error?.response?.data && Object.keys(error.response.data).length > 0;
-      const isNetworkError = !error?.response || (status >= 500 && !hasResponseData);
-
-      if (isNetworkError) {
+      if (checkIsNetworkError(error)) {
         toast.error('Unable to connect to the server. Please check your internet connection and try again.', {
           icon: <WifiOff className="h-4 w-4" />,
           action: {
@@ -85,19 +83,19 @@ function RegisterPage() {
       }
 
       // Handle server errors with better messages
-      const errors = error?.response?.data?.errors;
+      const errors = getAllauthErrors(error);
+      const status = errors ? 400 : undefined; // If we have allauth errors, it's a 400-level error
       let errorMessage: string;
 
       if (status === 429) {
         // Rate limited
         errorMessage = 'Too many registration attempts. Please wait a few minutes and try again.';
-      } else if (status >= 500) {
+      } else if (status && status >= 500) {
         // Server error
         errorMessage = 'Server error. Please try again in a moment.';
       } else {
         // Use server-provided message or fallback
-        errorMessage =
-          errors?.[0]?.message || error?.response?.data?.message || 'Registration failed. Please try again.';
+        errorMessage = errors?.[0]?.message || 'Registration failed. Please try again.';
       }
 
       toast.error(errorMessage);
@@ -123,7 +121,7 @@ function RegisterPage() {
         // This shouldn't happen with passkey signup, but handle just in case
         navigate({ to: '/' });
       }
-    } catch (error) {
+    } catch {
       // Error already handled in hook
     }
   };

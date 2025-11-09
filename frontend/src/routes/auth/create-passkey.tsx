@@ -8,6 +8,8 @@ import { Label } from '@/components/shadcn/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/shadcn/card';
 import { webAuthnAPI } from '@/api/allauth';
 import { useAuth } from '@/providers/authProvider';
+import { getAllauthErrors } from '@/lib/errors';
+import type { AuthFlow } from '@/api/allauth.types';
 
 export const Route = createFileRoute('/auth/create-passkey')({
   component: CreatePasskeyPage,
@@ -21,7 +23,7 @@ function CreatePasskeyPage() {
 
   // Check if we have a pending passkey signup flow
   const hasPendingPasskeySignup = auth?.data?.flows?.some(
-    (flow: any) => flow.id === 'mfa_signup_webauthn' && flow.isPending
+    (flow: AuthFlow) => flow.id === 'mfa_signup_webauthn' && flow.isPending
   );
 
   // Redirect to signup if no pending passkey flow (use effect to avoid render-time navigation)
@@ -63,9 +65,10 @@ function CreatePasskeyPage() {
         toast.error('Passkey created but authentication failed. Please try logging in.');
         navigate({ to: '/auth/login', search: { redirect: '/' } });
       }
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Create passkey error:', error);
-      const errorMessage = error?.response?.data?.errors?.[0]?.message || error?.message || 'Failed to create passkey';
+      const errors = getAllauthErrors(error);
+      const errorMessage = errors[0]?.message || (error instanceof Error ? error.message : 'Failed to create passkey');
       toast.error(errorMessage);
       setIsLoading(false);
     }

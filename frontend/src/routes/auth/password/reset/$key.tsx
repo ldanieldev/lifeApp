@@ -11,6 +11,8 @@ import { Label } from '@/components/shadcn/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/shadcn/card';
 import { authAPI } from '@/api/allauth';
 import { passwordResetConfirmSchema, type PasswordResetConfirmFormData } from '@/lib/validations/auth';
+import { getAllauthErrors, isNetworkError as checkIsNetworkError } from '@/lib/errors';
+import { isAxiosError } from 'axios';
 
 export const Route = createFileRoute('/auth/password/reset/$key')({
   component: PasswordResetConfirmPage,
@@ -58,13 +60,9 @@ function PasswordResetConfirmPage() {
       // Success - redirect to login
       toast.success('Password reset successful! Please login with your new password.');
       navigate({ to: '/auth/login', search: { redirect: '/' } });
-    } catch (error: any) {
+    } catch (error: unknown) {
       // Check for network errors
-      const status = error?.response?.status;
-      const hasResponseData = error?.response?.data && Object.keys(error.response.data).length > 0;
-      const isNetworkError = !error?.response || (status >= 500 && !hasResponseData);
-
-      if (isNetworkError) {
+      if (checkIsNetworkError(error)) {
         toast.error('Unable to connect to the server. Please check your internet connection and try again.', {
           icon: <WifiOff className="h-4 w-4" />,
           action: {
@@ -76,18 +74,17 @@ function PasswordResetConfirmPage() {
       }
 
       // Handle server errors with better messages
-      const errors = error?.response?.data?.errors;
+      const errors = getAllauthErrors(error);
       let errorMessage: string;
+
+      const status = isAxiosError(error) ? error.response?.status : undefined;
 
       if (status === 429) {
         errorMessage = 'Too many reset attempts. Please wait a few minutes and try again.';
-      } else if (status >= 500) {
+      } else if (status && status >= 500) {
         errorMessage = 'Server error. Please try again in a moment.';
       } else {
-        errorMessage =
-          errors?.[0]?.message ||
-          error?.response?.data?.message ||
-          'Failed to reset password. The reset link may be invalid or expired.';
+        errorMessage = errors[0]?.message || 'Failed to reset password. The reset link may be invalid or expired.';
       }
 
       toast.error(errorMessage);

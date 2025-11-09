@@ -11,7 +11,7 @@ repos:
             ^backend/.*/__init__\.py$|
             ^backend/manage\.py$
           )
-        args: [--fix] # Auto-fix issues
+        args: [--fix, --config, backend/pyproject.toml] # Auto-fix issues using backend config
       - id: ruff-format
         files: ^backend/.*\.py$
         exclude: |
@@ -19,6 +19,7 @@ repos:
             ^backend/.*/migrations/.*\.py$|
             ^backend/.*/__init__\.py$
           )
+        args: [--config, backend/pyproject.toml] # Use backend config for formatting
 
   # Frontend tools
   - repo: https://github.com/pre-commit/mirrors-prettier
@@ -27,6 +28,7 @@ repos:
       - id: prettier
         files: ^frontend/.*\.(js|jsx|ts|tsx|css|md|json)$
         additional_dependencies: ['prettier@3.6.2']
+        args: [--config, frontend/.prettierrc, --write] # Use frontend prettier config
 
   - repo: https://github.com/pre-commit/mirrors-eslint
     rev: v9.17.0

@@ -3,6 +3,8 @@ import { useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import { webAuthnAPI } from '@/api/allauth';
 import { useAuth } from '@/providers/authProvider';
+import { getAllauthErrors } from '@/lib/errors';
+import type { AuthFlow } from '@/api/allauth.types';
 
 /**
  * Hook for WebAuthn/Passkey operations
@@ -39,10 +41,11 @@ export const usePasskey = () => {
 
         // Invalidate passkeys query to refetch the list
         queryClient.invalidateQueries({ queryKey: ['passkeys'] });
-      } catch (error: any) {
+      } catch (error: unknown) {
         console.error('Passkey registration error:', error);
+        const errors = getAllauthErrors(error);
         const errorMessage =
-          error?.response?.data?.errors?.[0]?.message || error?.message || 'Failed to register passkey';
+          errors?.[0]?.message || (error instanceof Error ? error.message : 'Failed to register passkey');
         toast.error(errorMessage);
         throw error;
       } finally {
@@ -68,10 +71,11 @@ export const usePasskey = () => {
       await refetchUser();
 
       toast.success('Logged in with passkey');
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Passkey authentication error:', error);
+      const errors = getAllauthErrors(error);
       const errorMessage =
-        error?.response?.data?.errors?.[0]?.message || error?.message || 'Failed to authenticate with passkey';
+        errors?.[0]?.message || (error instanceof Error ? error.message : 'Failed to authenticate with passkey');
       toast.error(errorMessage);
       throw error;
     } finally {
@@ -100,24 +104,28 @@ export const usePasskey = () => {
         // User needs to verify email first, then create passkey
         toast.success('Verification code sent! Please check your email.');
         return { success: true, needsEmailVerification: true, email };
-      } catch (error: any) {
+      } catch (error: unknown) {
         console.error('Passkey signup error:', error);
 
         // Check if this is a 401 with verify_email flow (email verification pending)
-        if (error?.response?.status === 401) {
-          const flows = error?.response?.data?.data?.flows || [];
-          const verifyEmailFlow = flows.find((flow: any) => flow.id === 'verify_email');
+        if (error && typeof error === 'object' && 'response' in error) {
+          const axiosError = error as { response?: { status?: number; data?: { data?: { flows?: AuthFlow[] } } } };
+          if (axiosError.response?.status === 401) {
+            const flows = axiosError.response.data?.data?.flows || [];
+            const verifyEmailFlow = flows.find((flow) => flow.id === 'verify_email');
 
-          if (verifyEmailFlow?.isPending) {
-            // Account created successfully, needs email verification
-            toast.success('Verification code sent! Please check your email.');
-            return { success: true, needsEmailVerification: true, email };
+            if (verifyEmailFlow?.isPending) {
+              // Account created successfully, needs email verification
+              toast.success('Verification code sent! Please check your email.');
+              return { success: true, needsEmailVerification: true, email };
+            }
           }
         }
 
         // Handle other errors
+        const errors = getAllauthErrors(error);
         const errorMessage =
-          error?.response?.data?.errors?.[0]?.message || error?.message || 'Failed to sign up with passkey';
+          errors?.[0]?.message || (error instanceof Error ? error.message : 'Failed to sign up with passkey');
         toast.error(errorMessage);
         throw error;
       } finally {

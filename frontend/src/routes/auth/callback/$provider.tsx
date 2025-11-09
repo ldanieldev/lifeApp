@@ -61,7 +61,7 @@ function OAuthCallback() {
             navigate({ to: '/auth/login', search: { redirect: '/' } });
           }
         }
-      } catch (error: any) {
+      } catch (error: unknown) {
         console.error('OAuth callback error:', error);
         toast.error('Authentication failed. Please try again.');
         navigate({ to: '/auth/login', search: { redirect: '/' } });
