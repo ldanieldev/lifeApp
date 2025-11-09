@@ -280,8 +280,8 @@ if DEBUG:
         "djangorestframework_camel_case.render.CamelCaseBrowsableAPIRenderer"
     )
 
-    # Development email - Mailhog
-    EMAIL_HOST = env("EMAIL_HOST", default="mailhog")
+    # Development email - Mailpit
+    EMAIL_HOST = env("EMAIL_HOST", default="mailpit")
     EMAIL_PORT = env.int("EMAIL_PORT", default=1025)
     EMAIL_USE_TLS = False
     EMAIL_USE_SSL = False

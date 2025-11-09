@@ -138,7 +138,7 @@ The application uses environment-based configuration:
 - `ALLOWED_HOSTS=["*"]` (wildcard)
 - `CORS_ALLOW_ALL_ORIGINS=True` (wildcard CORS)
 - HTTP cookies allowed
-- Mailhog for email testing
+- Mailpit for email testing
 - WebAuthn works on localhost
 
 **Production (DEBUG=False):**

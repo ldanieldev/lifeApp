@@ -12,7 +12,7 @@
     5540, // Redis Insight
     9200, // Elasticsearch
     5601, // Kibana
-    8025 // Mailhog Web UI
+    8025 // Mailpit Web UI
   ],
   "containerEnv": {
     "UV_CACHE_DIR": "/workspace/.uv-cache"
