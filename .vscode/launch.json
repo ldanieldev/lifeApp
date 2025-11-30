@@ -19,7 +19,7 @@
       "request": "launch",
       "python": "${workspaceFolder}/.venv/bin/python",
       "program": "${workspaceFolder}/backend/manage.py",
-      "args": ["runserver_plus"],
+      "args": ["runserver_plus", "0.0.0.0:8000"],
       "django": true,
       "cwd": "${workspaceFolder}/backend"
     }

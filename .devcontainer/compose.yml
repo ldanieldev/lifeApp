@@ -71,9 +71,30 @@ services:
       - '1025:1025' # SMTP
       - '8025:8025' # Web UI
 
+  prometheus:
+    image: prom/prometheus:latest
+    env_file:
+      - ../.env
+    volumes:
+      - ../config/prometheus.yml.template:/etc/prometheus/prometheus.yml.template:ro
+      - ../config/entrypoint-prometheus.sh:/entrypoint-prometheus.sh:ro
+      - prometheus_data:/prometheus
+    entrypoint: ["/bin/sh", "/entrypoint-prometheus.sh"]
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+      - '--web.console.libraries=/usr/share/prometheus/console_libraries'
+      - '--web.console.templates=/usr/share/prometheus/consoles'
+      - '--enable-feature=remote-write-receiver'
+    ports:
+      - '9090:9090'  # Prometheus Web UI (optional, for debugging)
+    depends_on:
+      - app
+
 volumes:
   postgres_data:
   redis_data:
   redis_insight_data:
   elasticsearch_data:
+  prometheus_data:
   vscode-server:

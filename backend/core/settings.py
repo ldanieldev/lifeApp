@@ -8,10 +8,20 @@ from pathlib import Path
 
 import environ
 
-env = environ.Env()
-
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
+
+# Initialize environment variables
+env = environ.Env()
+
+# Read .env file if it exists (for local development outside Docker)
+# In Docker, environment variables are passed via docker-compose env_file
+# This allows the backend to be run standalone or as part of the monorepo
+env_file = BASE_DIR.parent / ".env"  # Check project root first
+if not env_file.exists():
+    env_file = BASE_DIR / ".env"  # Check backend directory
+if env_file.exists():
+    environ.Env.read_env(str(env_file))
 
 DEBUG = env.bool("DEBUG", default=False)
 
@@ -55,6 +65,8 @@ INSTALLED_APPS = [
     "allauth.mfa",
     "allauth.headless",
     "allauth.usersessions",
+    # Monitoring
+    "django_prometheus",
     # Custom apps
     "users",
     "authentication",
@@ -63,6 +75,8 @@ INSTALLED_APPS = [
 ]
 
 MIDDLEWARE = [
+    # Prometheus monitoring - must be first to capture all requests
+    "django_prometheus.middleware.PrometheusBeforeMiddleware",
     "corsheaders.middleware.CorsMiddleware",
     "django.middleware.security.SecurityMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
@@ -75,6 +89,8 @@ MIDDLEWARE = [
     "allauth.usersessions.middleware.UserSessionsMiddleware",  # rack user sessions
     # Transform allauth responses to camelCase
     "core.middleware.AllauthCamelCaseMiddleware",
+    # Prometheus monitoring - must be last to capture response
+    "django_prometheus.middleware.PrometheusAfterMiddleware",
 ]
 
 ROOT_URLCONF = "core.urls"
@@ -99,11 +115,13 @@ WSGI_APPLICATION = "core.wsgi.application"
 
 # Database configuration
 DATABASES = {"default": env.db()}
+# Wrap database engine with Prometheus instrumentation for metrics
+DATABASES["default"]["ENGINE"] = "django_prometheus.db.backends.postgresql"
 
 # Cache configuration
 CACHES = {
     "default": {
-        "BACKEND": "django_redis.cache.RedisCache",
+        "BACKEND": "django_prometheus.cache.backends.redis.RedisCache",
         "LOCATION": REDIS_URL,
         "OPTIONS": {
             "CLIENT_CLASS": "django_redis.client.DefaultClient",
@@ -309,3 +327,100 @@ else:
 
     # WebAuthn requires HTTPS in production
     MFA_WEBAUTHN_ALLOW_INSECURE_ORIGIN = False
+
+
+# ============================================================================
+# MONITORING & OBSERVABILITY (LGTM Stack)
+# ============================================================================
+
+ENABLE_MONITORING = env.bool("ENABLE_MONITORING", default=False)
+SERVICE_NAME = env("SERVICE_NAME", default="life-app-backend")
+ENVIRONMENT = env("ENVIRONMENT", default="development" if DEBUG else "production")
+
+# LGTM Stack endpoints - configure in .env to point to your monitoring stack
+LOKI_URL = env("LOKI_URL", default="http://loki:3100/loki/api/v1/push")
+TEMPO_ENDPOINT = env("TEMPO_ENDPOINT", default="http://tempo:4317")  # OTLP gRPC
+MIMIR_ENDPOINT = env("MIMIR_ENDPOINT", default="http://mimir:9009")
+
+# ============================================================================
+# LOGGING CONFIGURATION
+# ============================================================================
+
+# Set log level for custom apps based on DEBUG mode
+# Custom apps get DEBUG logs, but third-party libraries stay at INFO/WARNING
+CUSTOM_APP_LOG_LEVEL = "DEBUG" if DEBUG else "INFO"
+
+LOGGING = {
+    "version": 1,
+    "disable_existing_loggers": False,
+    "formatters": {
+        "verbose": {
+            "format": "[{levelname}] {asctime} {name} {module}.{funcName}:{lineno} - {message}",
+            "style": "{",
+        },
+        "simple": {
+            "format": "[{levelname}] {message}",
+            "style": "{",
+        },
+    },
+    "handlers": {
+        "console": {
+            "class": "logging.StreamHandler",
+            "formatter": "verbose",
+        },
+    },
+    "root": {
+        "handlers": ["console"],
+        "level": "INFO",  # Root logger at INFO to avoid third-party spam
+    },
+    "loggers": {
+        # Django framework loggers
+        "django": {
+            "handlers": ["console"],
+            "level": "INFO",
+            "propagate": False,
+        },
+        "django.request": {
+            "handlers": ["console"],
+            "level": "WARNING",
+            "propagate": False,
+        },
+        "django.server": {
+            "handlers": ["console"],
+            "level": "INFO",
+            "propagate": False,
+        },
+        # Silence noisy third-party libraries
+        "urllib3": {
+            "handlers": ["console"],
+            "level": "WARNING",
+            "propagate": False,
+        },
+        "requests": {
+            "handlers": ["console"],
+            "level": "WARNING",
+            "propagate": False,
+        },
+        "opentelemetry": {
+            "handlers": ["console"],
+            "level": "WARNING",
+            "propagate": False,
+        },
+        # Your custom app loggers - DEBUG in development, INFO in production
+        "core": {
+            "handlers": ["console"],
+            "level": CUSTOM_APP_LOG_LEVEL,
+            "propagate": True,
+        },
+        "authentication": {
+            "handlers": ["console"],
+            "level": CUSTOM_APP_LOG_LEVEL,
+            "propagate": True,
+        },
+        "users": {
+            "handlers": ["console"],
+            "level": CUSTOM_APP_LOG_LEVEL,
+            "propagate": True,
+        },
+    },
+}

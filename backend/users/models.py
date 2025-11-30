@@ -3,11 +3,12 @@
 from django.contrib.auth.models import AbstractBaseUser, PermissionsMixin
 from django.db import models
 from django.utils import timezone
+from django_prometheus.models import ExportModelOperationsMixin
 
 from users.managers import UserManager
 
 
-class User(AbstractBaseUser, PermissionsMixin):
+class User(ExportModelOperationsMixin("user"), AbstractBaseUser, PermissionsMixin):
     """Custom user model that uses email as the unique identifier.
 
     This model extends AbstractBaseUser and PermissionsMixin to provide

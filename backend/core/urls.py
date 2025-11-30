@@ -27,6 +27,8 @@ urlpatterns = [
         name="swagger-ui",
     ),
     path("api/redoc/", SpectacularRedocView.as_view(url_name="schema"), name="redoc"),
+    # Prometheus metrics endpoint (for Mimir/Prometheus to scrape)
+    path("", include("django_prometheus.urls")),
 ]
 
 if "debug_toolbar" in settings.INSTALLED_APPS and getattr(settings, "DEBUG", False):

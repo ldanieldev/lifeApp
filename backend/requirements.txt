@@ -12,3 +12,14 @@ django-elasticsearch-dsl~=9.0.0
 django-filter~=25.2.0
 drf-spectacular~=0.29.0
 requests~=2.32.5
+
+# Observability / Monitoring (LGTM Stack)
+opentelemetry-api~=1.28.2
+opentelemetry-sdk~=1.28.2
+opentelemetry-instrumentation-django~=0.49b2
+opentelemetry-instrumentation-psycopg~=0.49b2
+opentelemetry-instrumentation-redis~=0.49b2
+opentelemetry-instrumentation-requests~=0.49b2
+opentelemetry-exporter-otlp~=1.28.2
+python-logging-loki~=0.3.1
+django-prometheus~=2.3.1
