@@ -8,170 +8,171 @@
 // You should NOT make any changes in this file as it will be overwritten.
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
-import { Route as rootRouteImport } from './routes/__root';
-import { Route as TodoRouteImport } from './routes/todo';
-import { Route as AccountRouteImport } from './routes/account';
-import { Route as IndexRouteImport } from './routes/index';
-import { Route as TodoIndexRouteImport } from './routes/todo/index';
-import { Route as AuthVerifyEmailRouteImport } from './routes/auth/verify-email';
-import { Route as AuthRegisterRouteImport } from './routes/auth/register';
-import { Route as AuthLoginRouteImport } from './routes/auth/login';
-import { Route as AuthCreatePasskeyRouteImport } from './routes/auth/create-passkey';
-import { Route as TodoProjectsIndexRouteImport } from './routes/todo/projects/index';
-import { Route as TodoListsIndexRouteImport } from './routes/todo/lists/index';
-import { Route as TodoProjectsProjectIdRouteImport } from './routes/todo/projects/$projectId';
-import { Route as TodoListsListIdRouteImport } from './routes/todo/lists/$listId';
-import { Route as AuthOauthCallbackRouteImport } from './routes/auth/oauth/callback';
-import { Route as AuthCallbackProviderRouteImport } from './routes/auth/callback/$provider';
-import { Route as AuthAuthenticateWebauthnRouteImport } from './routes/auth/authenticate/webauthn';
-import { Route as AuthPasswordResetIndexRouteImport } from './routes/auth/password/reset/index';
-import { Route as AuthPasswordResetKeyRouteImport } from './routes/auth/password/reset/$key';
+import { Route as rootRouteImport } from './routes/__root'
+import { Route as TodoRouteImport } from './routes/todo'
+import { Route as AccountRouteImport } from './routes/account'
+import { Route as IndexRouteImport } from './routes/index'
+import { Route as TodoIndexRouteImport } from './routes/todo/index'
+import { Route as AuthVerifyEmailRouteImport } from './routes/auth/verify-email'
+import { Route as AuthRegisterRouteImport } from './routes/auth/register'
+import { Route as AuthLoginRouteImport } from './routes/auth/login'
+import { Route as AuthCreatePasskeyRouteImport } from './routes/auth/create-passkey'
+import { Route as TodoProjectsIndexRouteImport } from './routes/todo/projects/index'
+import { Route as TodoListsIndexRouteImport } from './routes/todo/lists/index'
+import { Route as TodoProjectsProjectIdRouteImport } from './routes/todo/projects/$projectId'
+import { Route as TodoListsListIdRouteImport } from './routes/todo/lists/$listId'
+import { Route as AuthOauthCallbackRouteImport } from './routes/auth/oauth/callback'
+import { Route as AuthCallbackProviderRouteImport } from './routes/auth/callback/$provider'
+import { Route as AuthAuthenticateWebauthnRouteImport } from './routes/auth/authenticate/webauthn'
+import { Route as AuthPasswordResetIndexRouteImport } from './routes/auth/password/reset/index'
+import { Route as AuthPasswordResetKeyRouteImport } from './routes/auth/password/reset/$key'
 
 const TodoRoute = TodoRouteImport.update({
   id: '/todo',
   path: '/todo',
   getParentRoute: () => rootRouteImport,
-} as any);
+} as any)
 const AccountRoute = AccountRouteImport.update({
   id: '/account',
   path: '/account',
   getParentRoute: () => rootRouteImport,
-} as any);
+} as any)
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => rootRouteImport,
-} as any);
+} as any)
 const TodoIndexRoute = TodoIndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => TodoRoute,
-} as any);
+} as any)
 const AuthVerifyEmailRoute = AuthVerifyEmailRouteImport.update({
   id: '/auth/verify-email',
   path: '/auth/verify-email',
   getParentRoute: () => rootRouteImport,
-} as any);
+} as any)
 const AuthRegisterRoute = AuthRegisterRouteImport.update({
   id: '/auth/register',
   path: '/auth/register',
   getParentRoute: () => rootRouteImport,
-} as any);
+} as any)
 const AuthLoginRoute = AuthLoginRouteImport.update({
   id: '/auth/login',
   path: '/auth/login',
   getParentRoute: () => rootRouteImport,
-} as any);
+} as any)
 const AuthCreatePasskeyRoute = AuthCreatePasskeyRouteImport.update({
   id: '/auth/create-passkey',
   path: '/auth/create-passkey',
   getParentRoute: () => rootRouteImport,
-} as any);
+} as any)
 const TodoProjectsIndexRoute = TodoProjectsIndexRouteImport.update({
   id: '/projects/',
   path: '/projects/',
   getParentRoute: () => TodoRoute,
-} as any);
+} as any)
 const TodoListsIndexRoute = TodoListsIndexRouteImport.update({
   id: '/lists/',
   path: '/lists/',
   getParentRoute: () => TodoRoute,
-} as any);
+} as any)
 const TodoProjectsProjectIdRoute = TodoProjectsProjectIdRouteImport.update({
   id: '/projects/$projectId',
   path: '/projects/$projectId',
   getParentRoute: () => TodoRoute,
-} as any);
+} as any)
 const TodoListsListIdRoute = TodoListsListIdRouteImport.update({
   id: '/lists/$listId',
   path: '/lists/$listId',
   getParentRoute: () => TodoRoute,
-} as any);
+} as any)
 const AuthOauthCallbackRoute = AuthOauthCallbackRouteImport.update({
   id: '/auth/oauth/callback',
   path: '/auth/oauth/callback',
   getParentRoute: () => rootRouteImport,
-} as any);
+} as any)
 const AuthCallbackProviderRoute = AuthCallbackProviderRouteImport.update({
   id: '/auth/callback/$provider',
   path: '/auth/callback/$provider',
   getParentRoute: () => rootRouteImport,
-} as any);
-const AuthAuthenticateWebauthnRoute = AuthAuthenticateWebauthnRouteImport.update({
-  id: '/auth/authenticate/webauthn',
-  path: '/auth/authenticate/webauthn',
-  getParentRoute: () => rootRouteImport,
-} as any);
+} as any)
+const AuthAuthenticateWebauthnRoute =
+  AuthAuthenticateWebauthnRouteImport.update({
+    id: '/auth/authenticate/webauthn',
+    path: '/auth/authenticate/webauthn',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const AuthPasswordResetIndexRoute = AuthPasswordResetIndexRouteImport.update({
   id: '/auth/password/reset/',
   path: '/auth/password/reset/',
   getParentRoute: () => rootRouteImport,
-} as any);
+} as any)
 const AuthPasswordResetKeyRoute = AuthPasswordResetKeyRouteImport.update({
   id: '/auth/password/reset/$key',
   path: '/auth/password/reset/$key',
   getParentRoute: () => rootRouteImport,
-} as any);
+} as any)
 
 export interface FileRoutesByFullPath {
-  '/': typeof IndexRoute;
-  '/account': typeof AccountRoute;
-  '/todo': typeof TodoRouteWithChildren;
-  '/auth/create-passkey': typeof AuthCreatePasskeyRoute;
-  '/auth/login': typeof AuthLoginRoute;
-  '/auth/register': typeof AuthRegisterRoute;
-  '/auth/verify-email': typeof AuthVerifyEmailRoute;
-  '/todo/': typeof TodoIndexRoute;
-  '/auth/authenticate/webauthn': typeof AuthAuthenticateWebauthnRoute;
-  '/auth/callback/$provider': typeof AuthCallbackProviderRoute;
-  '/auth/oauth/callback': typeof AuthOauthCallbackRoute;
-  '/todo/lists/$listId': typeof TodoListsListIdRoute;
-  '/todo/projects/$projectId': typeof TodoProjectsProjectIdRoute;
-  '/todo/lists': typeof TodoListsIndexRoute;
-  '/todo/projects': typeof TodoProjectsIndexRoute;
-  '/auth/password/reset/$key': typeof AuthPasswordResetKeyRoute;
-  '/auth/password/reset': typeof AuthPasswordResetIndexRoute;
+  '/': typeof IndexRoute
+  '/account': typeof AccountRoute
+  '/todo': typeof TodoRouteWithChildren
+  '/auth/create-passkey': typeof AuthCreatePasskeyRoute
+  '/auth/login': typeof AuthLoginRoute
+  '/auth/register': typeof AuthRegisterRoute
+  '/auth/verify-email': typeof AuthVerifyEmailRoute
+  '/todo/': typeof TodoIndexRoute
+  '/auth/authenticate/webauthn': typeof AuthAuthenticateWebauthnRoute
+  '/auth/callback/$provider': typeof AuthCallbackProviderRoute
+  '/auth/oauth/callback': typeof AuthOauthCallbackRoute
+  '/todo/lists/$listId': typeof TodoListsListIdRoute
+  '/todo/projects/$projectId': typeof TodoProjectsProjectIdRoute
+  '/todo/lists': typeof TodoListsIndexRoute
+  '/todo/projects': typeof TodoProjectsIndexRoute
+  '/auth/password/reset/$key': typeof AuthPasswordResetKeyRoute
+  '/auth/password/reset': typeof AuthPasswordResetIndexRoute
 }
 export interface FileRoutesByTo {
-  '/': typeof IndexRoute;
-  '/account': typeof AccountRoute;
-  '/auth/create-passkey': typeof AuthCreatePasskeyRoute;
-  '/auth/login': typeof AuthLoginRoute;
-  '/auth/register': typeof AuthRegisterRoute;
-  '/auth/verify-email': typeof AuthVerifyEmailRoute;
-  '/todo': typeof TodoIndexRoute;
-  '/auth/authenticate/webauthn': typeof AuthAuthenticateWebauthnRoute;
-  '/auth/callback/$provider': typeof AuthCallbackProviderRoute;
-  '/auth/oauth/callback': typeof AuthOauthCallbackRoute;
-  '/todo/lists/$listId': typeof TodoListsListIdRoute;
-  '/todo/projects/$projectId': typeof TodoProjectsProjectIdRoute;
-  '/todo/lists': typeof TodoListsIndexRoute;
-  '/todo/projects': typeof TodoProjectsIndexRoute;
-  '/auth/password/reset/$key': typeof AuthPasswordResetKeyRoute;
-  '/auth/password/reset': typeof AuthPasswordResetIndexRoute;
+  '/': typeof IndexRoute
+  '/account': typeof AccountRoute
+  '/auth/create-passkey': typeof AuthCreatePasskeyRoute
+  '/auth/login': typeof AuthLoginRoute
+  '/auth/register': typeof AuthRegisterRoute
+  '/auth/verify-email': typeof AuthVerifyEmailRoute
+  '/todo': typeof TodoIndexRoute
+  '/auth/authenticate/webauthn': typeof AuthAuthenticateWebauthnRoute
+  '/auth/callback/$provider': typeof AuthCallbackProviderRoute
+  '/auth/oauth/callback': typeof AuthOauthCallbackRoute
+  '/todo/lists/$listId': typeof TodoListsListIdRoute
+  '/todo/projects/$projectId': typeof TodoProjectsProjectIdRoute
+  '/todo/lists': typeof TodoListsIndexRoute
+  '/todo/projects': typeof TodoProjectsIndexRoute
+  '/auth/password/reset/$key': typeof AuthPasswordResetKeyRoute
+  '/auth/password/reset': typeof AuthPasswordResetIndexRoute
 }
 export interface FileRoutesById {
-  __root__: typeof rootRouteImport;
-  '/': typeof IndexRoute;
-  '/account': typeof AccountRoute;
-  '/todo': typeof TodoRouteWithChildren;
-  '/auth/create-passkey': typeof AuthCreatePasskeyRoute;
-  '/auth/login': typeof AuthLoginRoute;
-  '/auth/register': typeof AuthRegisterRoute;
-  '/auth/verify-email': typeof AuthVerifyEmailRoute;
-  '/todo/': typeof TodoIndexRoute;
-  '/auth/authenticate/webauthn': typeof AuthAuthenticateWebauthnRoute;
-  '/auth/callback/$provider': typeof AuthCallbackProviderRoute;
-  '/auth/oauth/callback': typeof AuthOauthCallbackRoute;
-  '/todo/lists/$listId': typeof TodoListsListIdRoute;
-  '/todo/projects/$projectId': typeof TodoProjectsProjectIdRoute;
-  '/todo/lists/': typeof TodoListsIndexRoute;
-  '/todo/projects/': typeof TodoProjectsIndexRoute;
-  '/auth/password/reset/$key': typeof AuthPasswordResetKeyRoute;
-  '/auth/password/reset/': typeof AuthPasswordResetIndexRoute;
+  __root__: typeof rootRouteImport
+  '/': typeof IndexRoute
+  '/account': typeof AccountRoute
+  '/todo': typeof TodoRouteWithChildren
+  '/auth/create-passkey': typeof AuthCreatePasskeyRoute
+  '/auth/login': typeof AuthLoginRoute
+  '/auth/register': typeof AuthRegisterRoute
+  '/auth/verify-email': typeof AuthVerifyEmailRoute
+  '/todo/': typeof TodoIndexRoute
+  '/auth/authenticate/webauthn': typeof AuthAuthenticateWebauthnRoute
+  '/auth/callback/$provider': typeof AuthCallbackProviderRoute
+  '/auth/oauth/callback': typeof AuthOauthCallbackRoute
+  '/todo/lists/$listId': typeof TodoListsListIdRoute
+  '/todo/projects/$projectId': typeof TodoProjectsProjectIdRoute
+  '/todo/lists/': typeof TodoListsIndexRoute
+  '/todo/projects/': typeof TodoProjectsIndexRoute
+  '/auth/password/reset/$key': typeof AuthPasswordResetKeyRoute
+  '/auth/password/reset/': typeof AuthPasswordResetIndexRoute
 }
 export interface FileRouteTypes {
-  fileRoutesByFullPath: FileRoutesByFullPath;
+  fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
     | '/account'
@@ -189,8 +190,8 @@ export interface FileRouteTypes {
     | '/todo/lists'
     | '/todo/projects'
     | '/auth/password/reset/$key'
-    | '/auth/password/reset';
-  fileRoutesByTo: FileRoutesByTo;
+    | '/auth/password/reset'
+  fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
     | '/account'
@@ -207,7 +208,7 @@ export interface FileRouteTypes {
     | '/todo/lists'
     | '/todo/projects'
     | '/auth/password/reset/$key'
-    | '/auth/password/reset';
+    | '/auth/password/reset'
   id:
     | '__root__'
     | '/'
@@ -226,154 +227,154 @@ export interface FileRouteTypes {
     | '/todo/lists/'
     | '/todo/projects/'
     | '/auth/password/reset/$key'
-    | '/auth/password/reset/';
-  fileRoutesById: FileRoutesById;
+    | '/auth/password/reset/'
+  fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
-  IndexRoute: typeof IndexRoute;
-  AccountRoute: typeof AccountRoute;
-  TodoRoute: typeof TodoRouteWithChildren;
-  AuthCreatePasskeyRoute: typeof AuthCreatePasskeyRoute;
-  AuthLoginRoute: typeof AuthLoginRoute;
-  AuthRegisterRoute: typeof AuthRegisterRoute;
-  AuthVerifyEmailRoute: typeof AuthVerifyEmailRoute;
-  AuthAuthenticateWebauthnRoute: typeof AuthAuthenticateWebauthnRoute;
-  AuthCallbackProviderRoute: typeof AuthCallbackProviderRoute;
-  AuthOauthCallbackRoute: typeof AuthOauthCallbackRoute;
-  AuthPasswordResetKeyRoute: typeof AuthPasswordResetKeyRoute;
-  AuthPasswordResetIndexRoute: typeof AuthPasswordResetIndexRoute;
+  IndexRoute: typeof IndexRoute
+  AccountRoute: typeof AccountRoute
+  TodoRoute: typeof TodoRouteWithChildren
+  AuthCreatePasskeyRoute: typeof AuthCreatePasskeyRoute
+  AuthLoginRoute: typeof AuthLoginRoute
+  AuthRegisterRoute: typeof AuthRegisterRoute
+  AuthVerifyEmailRoute: typeof AuthVerifyEmailRoute
+  AuthAuthenticateWebauthnRoute: typeof AuthAuthenticateWebauthnRoute
+  AuthCallbackProviderRoute: typeof AuthCallbackProviderRoute
+  AuthOauthCallbackRoute: typeof AuthOauthCallbackRoute
+  AuthPasswordResetKeyRoute: typeof AuthPasswordResetKeyRoute
+  AuthPasswordResetIndexRoute: typeof AuthPasswordResetIndexRoute
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
     '/todo': {
-      id: '/todo';
-      path: '/todo';
-      fullPath: '/todo';
-      preLoaderRoute: typeof TodoRouteImport;
-      parentRoute: typeof rootRouteImport;
-    };
+      id: '/todo'
+      path: '/todo'
+      fullPath: '/todo'
+      preLoaderRoute: typeof TodoRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/account': {
-      id: '/account';
-      path: '/account';
-      fullPath: '/account';
-      preLoaderRoute: typeof AccountRouteImport;
-      parentRoute: typeof rootRouteImport;
-    };
+      id: '/account'
+      path: '/account'
+      fullPath: '/account'
+      preLoaderRoute: typeof AccountRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/': {
-      id: '/';
-      path: '/';
-      fullPath: '/';
-      preLoaderRoute: typeof IndexRouteImport;
-      parentRoute: typeof rootRouteImport;
-    };
+      id: '/'
+      path: '/'
+      fullPath: '/'
+      preLoaderRoute: typeof IndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/todo/': {
-      id: '/todo/';
-      path: '/';
-      fullPath: '/todo/';
-      preLoaderRoute: typeof TodoIndexRouteImport;
-      parentRoute: typeof TodoRoute;
-    };
+      id: '/todo/'
+      path: '/'
+      fullPath: '/todo/'
+      preLoaderRoute: typeof TodoIndexRouteImport
+      parentRoute: typeof TodoRoute
+    }
     '/auth/verify-email': {
-      id: '/auth/verify-email';
-      path: '/auth/verify-email';
-      fullPath: '/auth/verify-email';
-      preLoaderRoute: typeof AuthVerifyEmailRouteImport;
-      parentRoute: typeof rootRouteImport;
-    };
+      id: '/auth/verify-email'
+      path: '/auth/verify-email'
+      fullPath: '/auth/verify-email'
+      preLoaderRoute: typeof AuthVerifyEmailRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/auth/register': {
-      id: '/auth/register';
-      path: '/auth/register';
-      fullPath: '/auth/register';
-      preLoaderRoute: typeof AuthRegisterRouteImport;
-      parentRoute: typeof rootRouteImport;
-    };
+      id: '/auth/register'
+      path: '/auth/register'
+      fullPath: '/auth/register'
+      preLoaderRoute: typeof AuthRegisterRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/auth/login': {
-      id: '/auth/login';
-      path: '/auth/login';
-      fullPath: '/auth/login';
-      preLoaderRoute: typeof AuthLoginRouteImport;
-      parentRoute: typeof rootRouteImport;
-    };
+      id: '/auth/login'
+      path: '/auth/login'
+      fullPath: '/auth/login'
+      preLoaderRoute: typeof AuthLoginRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/auth/create-passkey': {
-      id: '/auth/create-passkey';
-      path: '/auth/create-passkey';
-      fullPath: '/auth/create-passkey';
-      preLoaderRoute: typeof AuthCreatePasskeyRouteImport;
-      parentRoute: typeof rootRouteImport;
-    };
+      id: '/auth/create-passkey'
+      path: '/auth/create-passkey'
+      fullPath: '/auth/create-passkey'
+      preLoaderRoute: typeof AuthCreatePasskeyRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/todo/projects/': {
-      id: '/todo/projects/';
-      path: '/projects';
-      fullPath: '/todo/projects';
-      preLoaderRoute: typeof TodoProjectsIndexRouteImport;
-      parentRoute: typeof TodoRoute;
-    };
+      id: '/todo/projects/'
+      path: '/projects'
+      fullPath: '/todo/projects'
+      preLoaderRoute: typeof TodoProjectsIndexRouteImport
+      parentRoute: typeof TodoRoute
+    }
     '/todo/lists/': {
-      id: '/todo/lists/';
-      path: '/lists';
-      fullPath: '/todo/lists';
-      preLoaderRoute: typeof TodoListsIndexRouteImport;
-      parentRoute: typeof TodoRoute;
-    };
+      id: '/todo/lists/'
+      path: '/lists'
+      fullPath: '/todo/lists'
+      preLoaderRoute: typeof TodoListsIndexRouteImport
+      parentRoute: typeof TodoRoute
+    }
     '/todo/projects/$projectId': {
-      id: '/todo/projects/$projectId';
-      path: '/projects/$projectId';
-      fullPath: '/todo/projects/$projectId';
-      preLoaderRoute: typeof TodoProjectsProjectIdRouteImport;
-      parentRoute: typeof TodoRoute;
-    };
+      id: '/todo/projects/$projectId'
+      path: '/projects/$projectId'
+      fullPath: '/todo/projects/$projectId'
+      preLoaderRoute: typeof TodoProjectsProjectIdRouteImport
+      parentRoute: typeof TodoRoute
+    }
     '/todo/lists/$listId': {
-      id: '/todo/lists/$listId';
-      path: '/lists/$listId';
-      fullPath: '/todo/lists/$listId';
-      preLoaderRoute: typeof TodoListsListIdRouteImport;
-      parentRoute: typeof TodoRoute;
-    };
+      id: '/todo/lists/$listId'
+      path: '/lists/$listId'
+      fullPath: '/todo/lists/$listId'
+      preLoaderRoute: typeof TodoListsListIdRouteImport
+      parentRoute: typeof TodoRoute
+    }
     '/auth/oauth/callback': {
-      id: '/auth/oauth/callback';
-      path: '/auth/oauth/callback';
-      fullPath: '/auth/oauth/callback';
-      preLoaderRoute: typeof AuthOauthCallbackRouteImport;
-      parentRoute: typeof rootRouteImport;
-    };
+      id: '/auth/oauth/callback'
+      path: '/auth/oauth/callback'
+      fullPath: '/auth/oauth/callback'
+      preLoaderRoute: typeof AuthOauthCallbackRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/auth/callback/$provider': {
-      id: '/auth/callback/$provider';
-      path: '/auth/callback/$provider';
-      fullPath: '/auth/callback/$provider';
-      preLoaderRoute: typeof AuthCallbackProviderRouteImport;
-      parentRoute: typeof rootRouteImport;
-    };
+      id: '/auth/callback/$provider'
+      path: '/auth/callback/$provider'
+      fullPath: '/auth/callback/$provider'
+      preLoaderRoute: typeof AuthCallbackProviderRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/auth/authenticate/webauthn': {
-      id: '/auth/authenticate/webauthn';
-      path: '/auth/authenticate/webauthn';
-      fullPath: '/auth/authenticate/webauthn';
-      preLoaderRoute: typeof AuthAuthenticateWebauthnRouteImport;
-      parentRoute: typeof rootRouteImport;
-    };
+      id: '/auth/authenticate/webauthn'
+      path: '/auth/authenticate/webauthn'
+      fullPath: '/auth/authenticate/webauthn'
+      preLoaderRoute: typeof AuthAuthenticateWebauthnRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/auth/password/reset/': {
-      id: '/auth/password/reset/';
-      path: '/auth/password/reset';
-      fullPath: '/auth/password/reset';
-      preLoaderRoute: typeof AuthPasswordResetIndexRouteImport;
-      parentRoute: typeof rootRouteImport;
-    };
+      id: '/auth/password/reset/'
+      path: '/auth/password/reset'
+      fullPath: '/auth/password/reset'
+      preLoaderRoute: typeof AuthPasswordResetIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/auth/password/reset/$key': {
-      id: '/auth/password/reset/$key';
-      path: '/auth/password/reset/$key';
-      fullPath: '/auth/password/reset/$key';
-      preLoaderRoute: typeof AuthPasswordResetKeyRouteImport;
-      parentRoute: typeof rootRouteImport;
-    };
+      id: '/auth/password/reset/$key'
+      path: '/auth/password/reset/$key'
+      fullPath: '/auth/password/reset/$key'
+      preLoaderRoute: typeof AuthPasswordResetKeyRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
 interface TodoRouteChildren {
-  TodoIndexRoute: typeof TodoIndexRoute;
-  TodoListsListIdRoute: typeof TodoListsListIdRoute;
-  TodoProjectsProjectIdRoute: typeof TodoProjectsProjectIdRoute;
-  TodoListsIndexRoute: typeof TodoListsIndexRoute;
-  TodoProjectsIndexRoute: typeof TodoProjectsIndexRoute;
+  TodoIndexRoute: typeof TodoIndexRoute
+  TodoListsListIdRoute: typeof TodoListsListIdRoute
+  TodoProjectsProjectIdRoute: typeof TodoProjectsProjectIdRoute
+  TodoListsIndexRoute: typeof TodoListsIndexRoute
+  TodoProjectsIndexRoute: typeof TodoProjectsIndexRoute
 }
 
 const TodoRouteChildren: TodoRouteChildren = {
@@ -382,9 +383,9 @@ const TodoRouteChildren: TodoRouteChildren = {
   TodoProjectsProjectIdRoute: TodoProjectsProjectIdRoute,
   TodoListsIndexRoute: TodoListsIndexRoute,
   TodoProjectsIndexRoute: TodoProjectsIndexRoute,
-};
+}
 
-const TodoRouteWithChildren = TodoRoute._addFileChildren(TodoRouteChildren);
+const TodoRouteWithChildren = TodoRoute._addFileChildren(TodoRouteChildren)
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
@@ -399,5 +400,7 @@ const rootRouteChildren: RootRouteChildren = {
   AuthOauthCallbackRoute: AuthOauthCallbackRoute,
   AuthPasswordResetKeyRoute: AuthPasswordResetKeyRoute,
   AuthPasswordResetIndexRoute: AuthPasswordResetIndexRoute,
-};
-export const routeTree = rootRouteImport._addFileChildren(rootRouteChildren)._addFileTypes<FileRouteTypes>();
+}
+export const routeTree = rootRouteImport
+  ._addFileChildren(rootRouteChildren)
+  ._addFileTypes<FileRouteTypes>()

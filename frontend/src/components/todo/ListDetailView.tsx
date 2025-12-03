@@ -40,17 +40,34 @@ export function ListDetailView() {
   const handleViewChange = (newView: ViewMode) => {
     if (!list) return;
 
-    // Update URL immediately
-    navigate({
-      to: '/todo/lists/$listId',
-      params: { listId },
-      search: (prev) => ({ ...prev, view: newView }),
-      replace: true,
-    });
+    // Prevent duplicate calls while mutation is in progress
+    if (switchViewMutation.isPending) return;
 
     // Only call API if actually switching modes (not just URL param)
     if (list.viewMode !== newView) {
-      switchViewMutation.mutate({ id: list.id, data: { viewMode: newView } });
+      switchViewMutation.mutate(
+        { id: list.id, data: { viewMode: newView } },
+        {
+          onSuccess: () => {
+            // Update URL only on success
+            navigate({
+              to: '/todo/lists/$listId',
+              params: { listId },
+              search: (prev) => ({ ...prev, view: newView }),
+              replace: true,
+            });
+          },
+          // Error already handled in hook with toast
+        }
+      );
+    } else {
+      // Just update URL if already in the correct mode
+      navigate({
+        to: '/todo/lists/$listId',
+        params: { listId },
+        search: (prev) => ({ ...prev, view: newView }),
+        replace: true,
+      });
     }
   };
 

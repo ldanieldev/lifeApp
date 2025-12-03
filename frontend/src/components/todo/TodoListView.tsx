@@ -4,12 +4,30 @@
  * Displays items in simple checklist format with undo functionality.
  */
 
-import { useState, useEffect } from 'react';
-import { Search, SlidersHorizontal } from 'lucide-react';
-import { useSearch, useNavigate } from '@tanstack/react-router';
+import { Button } from '@/components/shadcn/button';
+import { Checkbox } from '@/components/shadcn/checkbox';
+import { Input } from '@/components/shadcn/input';
+import { Label } from '@/components/shadcn/label';
+import { Separator } from '@/components/shadcn/separator';
 import {
-  DndContext,
+  Sheet,
+  SheetContent,
+  SheetDescription,
+  SheetHeader,
+  SheetTitle,
+  SheetTrigger,
+} from '@/components/shadcn/sheet';
+import {
+  useBulkCompleteItems,
+  useBulkDeleteItems,
+  useCompleteTodoItem,
+  useReorderItems,
+  useUncompleteTodoItem,
+} from '@/hooks/useTodos';
+import type { TodoListDetail } from '@/types/todo';
+import {
   closestCenter,
+  DndContext,
   KeyboardSensor,
   PointerSensor,
   useSensor,
@@ -22,32 +40,14 @@ import {
   sortableKeyboardCoordinates,
   verticalListSortingStrategy,
 } from '@dnd-kit/sortable';
-import { Button } from '@/components/shadcn/button';
-import { Input } from '@/components/shadcn/input';
-import { Checkbox } from '@/components/shadcn/checkbox';
-import { Label } from '@/components/shadcn/label';
-import { Separator } from '@/components/shadcn/separator';
-import {
-  Sheet,
-  SheetContent,
-  SheetDescription,
-  SheetHeader,
-  SheetTitle,
-  SheetTrigger,
-} from '@/components/shadcn/sheet';
-import {
-  useCompleteTodoItem,
-  useUncompleteTodoItem,
-  useBulkCompleteItems,
-  useBulkDeleteItems,
-  useReorderItems,
-} from '@/hooks/useTodos';
-import { TodoItem } from './TodoItem';
-import { SortableTodoItem } from './SortableTodoItem';
-import { QuickAddItem } from './QuickAddItem';
+import { useNavigate, useSearch } from '@tanstack/react-router';
+import { Search, SlidersHorizontal } from 'lucide-react';
+import { useEffect, useState } from 'react';
 import { BulkActionBar } from './BulkActionBar';
+import { QuickAddItem } from './QuickAddItem';
+import { TodoItem } from './TodoItem';
+import { TodoItemWithSubtasks } from './TodoItemWithSubtasks';
 import { UndoToast } from './UndoToast';
-import type { TodoListDetail } from '@/types/todo';
 
 interface TodoListViewProps {
   list: TodoListDetail;
@@ -80,10 +80,14 @@ export function TodoListView({ list }: TodoListViewProps) {
   const sortBy = searchParams.sort || 'displayOrder';
 
   const items = list.items || [];
+  const [expandedItemIds, setExpandedItemIds] = useState<Set<number>>(new Set());
 
-  // Filter and sort items
+  // Filter and sort items - only top-level items (subtasks are nested)
   const filteredItems = items
     .filter((item) => {
+      // Only show top-level items (subtasks will be rendered nested)
+      if (item.parentItemId) return false;
+
       // Filter by completion status
       if (!showCompleted && item.status === 'completed') return false;
 
@@ -109,6 +113,18 @@ export function TodoListView({ list }: TodoListViewProps) {
 
   const pendingItems = filteredItems.filter((item) => item.status === 'pending');
   const completedItems = filteredItems.filter((item) => item.status === 'completed');
+
+  const toggleExpanded = (itemId: number) => {
+    setExpandedItemIds((prev) => {
+      const newSet = new Set(prev);
+      if (newSet.has(itemId)) {
+        newSet.delete(itemId);
+      } else {
+        newSet.add(itemId);
+      }
+      return newSet;
+    });
+  };
 
   // Clear undo timeout on unmount
   useEffect(() => {
@@ -201,6 +217,16 @@ export function TodoListView({ list }: TodoListViewProps) {
       const newIndex = pendingItems.findIndex((item) => item.id === over.id);
 
       if (oldIndex !== -1 && newIndex !== -1) {
+        const activeItem = pendingItems[oldIndex];
+        const overItem = pendingItems[newIndex];
+
+        // Only allow reordering if items have the same parent
+        if (activeItem.parentItemId !== overItem.parentItemId) {
+          // Show toast notification
+          console.warn('Cannot reorder items with different parents');
+          return;
+        }
+
         // Reorder within pending items
         const reorderedPending = arrayMove(pendingItems, oldIndex, newIndex);
 
@@ -215,9 +241,9 @@ export function TodoListView({ list }: TodoListViewProps) {
     }
   };
 
-  const handleSortChange = (newSort: string) => {
+  const handleSortChange = (newSort: 'displayOrder' | 'dueDate' | 'priority' | 'createdAt') => {
     navigate({
-      search: (prev) => ({ ...prev, sort: newSort as any }),
+      search: (prev) => ({ ...prev, sort: newSort }),
       replace: true,
     });
   };
@@ -254,32 +280,39 @@ export function TodoListView({ list }: TodoListViewProps) {
               <SheetDescription>Customize how your tasks are displayed</SheetDescription>
             </SheetHeader>
 
-            <div className="space-y-6 mt-6">
+            <div className="space-y-6 mt-8">
               {/* Show Completed */}
-              <div className="flex items-center space-x-2">
-                <Checkbox id="showCompleted" checked={showCompleted} onCheckedChange={toggleShowCompleted} />
-                <Label htmlFor="showCompleted">Show completed items</Label>
+              <div className="space-y-4 px-4">
+                <Label className="text-sm font-semibold">Display Options</Label>
+                <div className="flex items-center gap-3 py-1">
+                  <Checkbox id="showCompleted" checked={showCompleted} onCheckedChange={toggleShowCompleted} />
+                  <Label htmlFor="showCompleted" className="cursor-pointer text-sm">
+                    Show completed items
+                  </Label>
+                </div>
               </div>
 
               <Separator />
 
               {/* Sort By */}
-              <div className="space-y-3">
-                <Label>Sort by</Label>
-                <div className="space-y-2">
+              <div className="space-y-4 px-4">
+                <Label className="text-sm font-semibold">Sort by</Label>
+                <div className="space-y-3">
                   {[
                     { value: 'displayOrder', label: 'Custom Order' },
                     { value: 'dueDate', label: 'Due Date' },
                     { value: 'priority', label: 'Priority' },
                     { value: 'createdAt', label: 'Created Date' },
                   ].map((option) => (
-                    <div key={option.value} className="flex items-center space-x-2">
+                    <div key={option.value} className="flex items-center gap-3 py-1">
                       <Checkbox
                         id={option.value}
                         checked={sortBy === option.value}
                         onCheckedChange={() => handleSortChange(option.value)}
                       />
-                      <Label htmlFor={option.value}>{option.label}</Label>
+                      <Label htmlFor={option.value} className="cursor-pointer text-sm">
+                        {option.label}
+                      </Label>
                     </div>
                   ))}
                 </div>
@@ -302,13 +335,18 @@ export function TodoListView({ list }: TodoListViewProps) {
             <SortableContext items={pendingItems.map((item) => item.id)} strategy={verticalListSortingStrategy}>
               <div className="space-y-2">
                 {pendingItems.map((item) => (
-                  <SortableTodoItem
+                  <TodoItemWithSubtasks
                     key={item.id}
                     item={item}
+                    listId={list.id}
                     onComplete={handleToggleComplete}
                     isSelected={selectedItemIds.has(item.id)}
                     onSelectionChange={bulkMode ? handleSelect : undefined}
                     bulkMode={bulkMode}
+                    isExpanded={expandedItemIds.has(item.id)}
+                    onToggleExpand={toggleExpanded}
+                    depth={0}
+                    showCompleted={showCompleted}
                   />
                 ))}
               </div>

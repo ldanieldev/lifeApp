@@ -104,7 +104,7 @@ export function useProjectLists(
   options?: UseQueryOptions<PaginatedResponse<TodoList>>
 ) {
   return useQuery({
-    queryKey: todoKeys.projectLists(projectId),
+    queryKey: todoKeys.projectLists(projectId, params),
     queryFn: () => todosApi.getProjectLists(projectId, params),
     staleTime: 2 * 60 * 1000,
     enabled: !!projectId,
@@ -395,6 +395,10 @@ export function useDeleteTodoList(options?: UseMutationOptions<void, Error, numb
 /**
  * Switch view mode (list ↔ kanban)
  */
+// Track last error to prevent duplicate toasts
+let lastErrorToastTime = 0;
+let lastErrorMessage = '';
+
 export function useSwitchViewMode(
   options?: UseMutationOptions<TodoListDetail, Error, { id: number; data: SwitchViewModeRequest }>
 ) {
@@ -406,9 +410,22 @@ export function useSwitchViewMode(
       toast.success(`Switched to ${data.viewMode} view`);
       queryClient.setQueryData(todoKeys.list(data.id), data);
     },
-    onError: (error) => {
+    onError: (error: unknown) => {
+      // Extract the error message from the response
+      const errorData = error as { response?: { data?: { message?: string } }; message?: string };
+      const message = errorData?.response?.data?.message || errorData?.message || 'Unknown error';
+
+      // Prevent duplicate toasts within 1 second
+      const now = Date.now();
+      if (now - lastErrorToastTime < 1000 && message === lastErrorMessage) {
+        return;
+      }
+
+      lastErrorToastTime = now;
+      lastErrorMessage = message;
+
       toast.error('Failed to switch view mode', {
-        description: error.message,
+        description: message,
       });
     },
     ...options,
@@ -474,6 +491,9 @@ export function useCreateTodoItem(options?: UseMutationOptions<TodoItemDetail, E
           displayOrder: newItem.displayOrder || 0,
           kanbanLaneId: newItem.kanbanLaneId || null,
           kanbanLaneName: null,
+          parentItemId: newItem.parentItemId || null,
+          depth: newItem.parentItemId ? 1 : 0,
+          subtasks: [],
           createdAt: new Date().toISOString(),
           updatedAt: new Date().toISOString(),
         };

@@ -62,9 +62,9 @@ class SoftDeleteModel(TimeStampedModel):
 
     is_deleted = models.BooleanField(default=False, db_index=True)
     deleted_at = models.DateTimeField(null=True, blank=True)
+    all_objects = models.Manager()  # Access to all objects including deleted
 
     objects = SoftDeleteManager()
-    all_objects = models.Manager()  # Access to all objects including deleted
 
     class Meta:
         abstract = True
@@ -469,6 +469,15 @@ class TodoItem(SoftDeleteModel):
         blank=True,
         help_text="Lane assignment for kanban view (null for list view)",
     )
+    parent_item = models.ForeignKey(
+        "self",
+        on_delete=models.CASCADE,
+        related_name="subtasks",
+        null=True,
+        blank=True,
+        db_index=True,
+        help_text="Parent item for subtasks (null for top-level items, max depth 2)",
+    )
 
     title = models.CharField(max_length=500)
     description = models.TextField(blank=True, default="")
@@ -552,3 +561,32 @@ class TodoItem(SoftDeleteModel):
         if not self.due_date or self.status == self.Status.COMPLETED:
             return False
         return self.due_date < timezone.now()
+
+    @property
+    def depth(self):
+        """Calculate nesting depth (0 for top-level, 1 for subtask, 2 for sub-subtask)."""
+        if not self.parent_item_id:
+            return 0
+        if not self.parent_item.parent_item_id:
+            return 1
+        return 2
+
+    def clean(self):
+        """Validate max depth and prevent subtasks in kanban lists."""
+        super().clean()
+
+        # Check max depth (2 levels)
+        if self.parent_item_id:
+            if self.parent_item.parent_item_id:
+                # Parent is already a subtask (depth 1)
+                if self.parent_item.parent_item.parent_item_id:
+                    # Would create depth 3+
+                    from django.core.exceptions import ValidationError
+
+                    raise ValidationError({"parent_item": "Maximum nesting depth is 2 levels"})
+
+        # Prevent subtasks in kanban view lists
+        if self.parent_item_id and self.todo_list.view_mode == TodoList.ViewMode.KANBAN:
+            from django.core.exceptions import ValidationError
+
+            raise ValidationError({"parent_item": "Subtasks are only allowed in list view"})

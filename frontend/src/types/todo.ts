@@ -74,7 +74,7 @@ export interface TodoListDetail extends TodoList {
 }
 
 /**
- * TodoItem model - individual task
+ * TodoItem model - individual task (supports subtasks up to 2 levels deep)
  */
 export interface TodoItem {
   id: number;
@@ -88,6 +88,9 @@ export interface TodoItem {
   displayOrder: number;
   kanbanLaneId: number | null;
   kanbanLaneName: string | null;
+  parentItemId: number | null; // Parent item (null for top-level items)
+  depth: number; // Nesting depth: 0 (top-level), 1 (subtask), 2 (sub-subtask)
+  subtasks: TodoItem[]; // Nested subtasks (max depth 2)
   createdAt: string;
   updatedAt: string;
 }
@@ -262,6 +265,7 @@ export interface CreateTodoItemRequest {
   dueDate?: string | null;
   displayOrder?: number;
   kanbanLaneId?: number | null;
+  parentItemId?: number | null; // Parent item for subtasks
 }
 
 /**

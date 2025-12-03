@@ -360,12 +360,15 @@ class KanbanLaneWriteSerializer(serializers.ModelSerializer):
 class TodoItemListSerializer(serializers.ModelSerializer):
     """Serializer for todo item list views.
 
-    Includes essential fields for display.
+    Includes essential fields for display and subtasks support.
     """
 
     is_overdue = serializers.BooleanField(read_only=True)
     kanban_lane_id = serializers.PrimaryKeyRelatedField(source="kanban_lane", read_only=True)
     kanban_lane_name = serializers.CharField(source="kanban_lane.name", read_only=True)
+    parent_item_id = serializers.PrimaryKeyRelatedField(source="parent_item", read_only=True)
+    depth = serializers.IntegerField(read_only=True)
+    subtasks = serializers.SerializerMethodField()
 
     class Meta:
         model = TodoItem
@@ -381,16 +384,34 @@ class TodoItemListSerializer(serializers.ModelSerializer):
             "display_order",
             "kanban_lane_id",
             "kanban_lane_name",
+            "parent_item_id",
+            "depth",
+            "subtasks",
             "created_at",
             "updated_at",
         ]
         read_only_fields = ["completed_at", "is_overdue", "created_at", "updated_at"]
 
+    def get_subtasks(self, obj):
+        """Get nested subtasks (up to 2 levels deep)."""
+        subtasks = obj.subtasks.filter(is_deleted=False).order_by("display_order")
+
+        # Get current depth from context, default to 0
+        current_depth = self.context.get("subtask_depth", 0)
+
+        # Max depth is 2, so serialize subtasks only if we haven't reached max depth
+        if current_depth < 2:
+            # Pass incremented depth to child serializers
+            child_context = {**self.context, "subtask_depth": current_depth + 1}
+            return TodoItemListSerializer(subtasks, many=True, context=child_context).data
+
+        return []
+
 
 class TodoItemDetailSerializer(serializers.ModelSerializer):
     """Detailed serializer for todo item detail view.
 
-    Includes all fields and related list/project information.
+    Includes all fields and related list/project information, plus subtasks.
     """
 
     is_overdue = serializers.BooleanField(read_only=True)
@@ -400,6 +421,9 @@ class TodoItemDetailSerializer(serializers.ModelSerializer):
     project_name = serializers.CharField(source="todo_list.project.name", read_only=True)
     kanban_lane_id = serializers.PrimaryKeyRelatedField(source="kanban_lane", read_only=True)
     kanban_lane_name = serializers.CharField(source="kanban_lane.name", read_only=True)
+    parent_item_id = serializers.PrimaryKeyRelatedField(source="parent_item", read_only=True)
+    depth = serializers.IntegerField(read_only=True)
+    subtasks = serializers.SerializerMethodField()
 
     class Meta:
         model = TodoItem
@@ -419,16 +443,34 @@ class TodoItemDetailSerializer(serializers.ModelSerializer):
             "project_name",
             "kanban_lane_id",
             "kanban_lane_name",
+            "parent_item_id",
+            "depth",
+            "subtasks",
             "created_at",
             "updated_at",
         ]
         read_only_fields = ["completed_at", "is_overdue", "created_at", "updated_at"]
 
+    def get_subtasks(self, obj):
+        """Get nested subtasks (up to 2 levels deep)."""
+        subtasks = obj.subtasks.filter(is_deleted=False).order_by("display_order")
+
+        # Get current depth from context, default to 0
+        current_depth = self.context.get("subtask_depth", 0)
+
+        # Max depth is 2, so serialize subtasks only if we haven't reached max depth
+        if current_depth < 2:
+            # Pass incremented depth to child serializers
+            child_context = {**self.context, "subtask_depth": current_depth + 1}
+            return TodoItemListSerializer(subtasks, many=True, context=child_context).data
+
+        return []
+
 
 class TodoItemWriteSerializer(serializers.ModelSerializer):
     """Serializer for creating/updating todo items.
 
-    Allows optional kanban lane assignment.
+    Allows optional kanban lane assignment and subtask creation.
     """
 
     todo_list_id = serializers.PrimaryKeyRelatedField(
@@ -439,6 +481,12 @@ class TodoItemWriteSerializer(serializers.ModelSerializer):
     kanban_lane_id = serializers.PrimaryKeyRelatedField(
         queryset=KanbanLane.objects.all(),
         source="kanban_lane",
+        required=False,
+        allow_null=True,
+    )
+    parent_item_id = serializers.PrimaryKeyRelatedField(
+        queryset=TodoItem.objects.all(),
+        source="parent_item",
         required=False,
         allow_null=True,
     )
@@ -453,6 +501,7 @@ class TodoItemWriteSerializer(serializers.ModelSerializer):
             "display_order",
             "todo_list_id",
             "kanban_lane_id",
+            "parent_item_id",
         ]
 
     def validate_todo_list_id(self, value):
@@ -472,10 +521,42 @@ class TodoItemWriteSerializer(serializers.ModelSerializer):
 
         return value
 
+    def validate_parent_item_id(self, value):
+        """Validate parent item belongs to the same list and max depth."""
+        if not value:
+            return value
+
+        # Check ownership
+        if value.todo_list.owner != self.context["request"].user:
+            raise serializers.ValidationError("You do not have permission to add subtasks to this item.")
+
+        # Check max depth: new item's depth would be parent's depth + 1
+        # Max allowed depth is 2, so parent can be at most depth 1
+        parent_depth = 0
+        if value.parent_item_id:
+            parent_depth = 1
+            if value.parent_item.parent_item_id:
+                parent_depth = 2
+
+        # If parent is depth 2, new item would be depth 3 (not allowed)
+        if parent_depth >= 2:
+            raise serializers.ValidationError("Maximum nesting depth is 2 levels.")
+
+        return value
+
     def validate(self, attrs):
         """Cross-field validation."""
         todo_list = attrs.get("todo_list")
         kanban_lane = attrs.get("kanban_lane")
+        parent_item = attrs.get("parent_item")
+
+        # Validate parent_item belongs to same list
+        if parent_item and parent_item.todo_list != todo_list:
+            raise serializers.ValidationError({"parent_item_id": "Parent item must belong to the same list."})
+
+        # Prevent subtasks in kanban view
+        if parent_item and todo_list.view_mode == TodoList.ViewMode.KANBAN:
+            raise serializers.ValidationError({"parent_item_id": "Subtasks are only allowed in list view."})
 
         # If list is in kanban mode, require a lane
         if todo_list and todo_list.view_mode == TodoList.ViewMode.KANBAN and not kanban_lane:
@@ -562,7 +643,7 @@ class ReorderSerializer(serializers.Serializer):
     )
 
     def validate_item_ids(self, value):
-        """Validate all items exist and belong to same list/lane."""
+        """Validate all items exist and belong to same list/lane/parent."""
         user = self.context["request"].user
         items = TodoItem.objects.filter(id__in=value, is_deleted=False)
 
@@ -570,9 +651,10 @@ class ReorderSerializer(serializers.Serializer):
         if items.count() != len(value):
             raise serializers.ValidationError("Some items do not exist.")
 
-        # Check ownership and same list
+        # Check ownership, same list, lane, and parent
         todo_list = None
         kanban_lane = None
+        parent_item = None
         for item in items:
             if item.todo_list.owner != user:
                 raise serializers.ValidationError(f"You do not have permission to reorder item {item.id}.")
@@ -580,12 +662,17 @@ class ReorderSerializer(serializers.Serializer):
             if todo_list is None:
                 todo_list = item.todo_list
                 kanban_lane = item.kanban_lane
+                parent_item = item.parent_item
             else:
                 if item.todo_list != todo_list:
                     raise serializers.ValidationError("All items must belong to the same list.")
                 if item.kanban_lane != kanban_lane:
                     raise serializers.ValidationError(
                         "All items must belong to the same lane (or all be in list view)."
+                    )
+                if item.parent_item != parent_item:
+                    raise serializers.ValidationError(
+                        "All items must have the same parent (or all be top-level items)."
                     )
 
         return value

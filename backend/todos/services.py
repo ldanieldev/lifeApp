@@ -410,6 +410,7 @@ class TodoService:
 
         Creates default lane if switching to kanban.
         Clears lane assignments if switching to list.
+        Blocks switch to kanban if list has subtasks.
 
         Args:
             todo_list: TodoList instance
@@ -418,12 +419,27 @@ class TodoService:
         Returns:
             Updated TodoList instance
 
+        Raises:
+            ValueError: If switching to kanban when subtasks exist
+
         """
         if new_mode not in [TodoList.ViewMode.LIST, TodoList.ViewMode.KANBAN]:
             raise ValueError("Invalid view mode")
 
         if todo_list.view_mode == new_mode:
             return todo_list
+
+        # Block switching to kanban if list has any items with subtasks
+        if new_mode == TodoList.ViewMode.KANBAN:
+            has_subtasks = todo_list.items.filter(
+                is_deleted=False,
+                parent_item__isnull=False,
+            ).exists()
+
+            if has_subtasks:
+                raise ValueError(
+                    "Cannot switch to kanban view: list contains subtasks. Please remove or flatten subtasks first."
+                )
 
         todo_list.view_mode = new_mode
 

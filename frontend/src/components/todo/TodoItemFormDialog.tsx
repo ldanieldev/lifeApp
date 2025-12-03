@@ -7,8 +7,6 @@
 import { useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { format } from 'date-fns';
-import { Calendar as CalendarIcon } from 'lucide-react';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/shadcn/dialog';
 import { Button } from '@/components/shadcn/button';
 import { Input } from '@/components/shadcn/input';
@@ -18,17 +16,24 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { useCreateTodoItem, useUpdateTodoItem } from '@/hooks/useTodos';
 import { todoItemFormSchema, type TodoItemFormValues } from '@/lib/validations/todo';
 import { PRIORITY_LABELS, type TodoItem } from '@/types/todo';
-import { cn } from '@/lib/utils';
 
 interface TodoItemFormDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   listId: number;
   laneId?: number | null;
+  parentItemId?: number | null;
   item?: TodoItem;
 }
 
-export function TodoItemFormDialog({ open, onOpenChange, listId, laneId, item }: TodoItemFormDialogProps) {
+export function TodoItemFormDialog({
+  open,
+  onOpenChange,
+  listId,
+  laneId,
+  parentItemId,
+  item,
+}: TodoItemFormDialogProps) {
   const isEdit = !!item;
 
   const createMutation = useCreateTodoItem();
@@ -87,6 +92,7 @@ export function TodoItemFormDialog({ open, onOpenChange, listId, laneId, item }:
           ...data,
           todoListId: listId,
           kanbanLaneId: laneId,
+          parentItemId: parentItemId,
           dueDate: data.dueDate?.toISOString() || null,
         },
         {

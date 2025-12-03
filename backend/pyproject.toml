@@ -42,6 +42,10 @@ known-third-party = ["django", "rest_framework"]
 "tests.py" = ["S101"]
 "conftest.py" = ["S101"]
 "create_test_data.py" = ["E402"]
+"*/migrations/*.py" = ["D100", "D101"]  # Migrations don't need module/class docstrings
+"**/migrations/*.py" = ["D100", "D101"]  # Migrations don't need module/class docstrings
+"models.py" = ["D106", "D105"]  # Meta classes and __str__ don't need docstrings
+"serializers.py" = ["D106"]  # Meta classes don't need docstrings
 
 [tool.pytest.ini_options]
 DJANGO_SETTINGS_MODULE = "core.settings"
