@@ -19,6 +19,8 @@ urlpatterns = [
     path("api/_allauth/", include("allauth.headless.urls")),
     # Custom authentication endpoints
     path("api/auth/", include("authentication.urls")),
+    # Todos API
+    path("api/todos/", include("todos.urls")),
     # API Documentation
     path("api/schema/", SpectacularAPIView.as_view(), name="schema"),
     path(

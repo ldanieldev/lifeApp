@@ -18,9 +18,19 @@ const data = {
   navMain: [
     {
       title: 'ToDos',
-      url: '/todo',
+      url: '/todo/projects',
       icon: ListTodoIcon,
       isActive: true,
+      items: [
+        {
+          title: 'All Projects',
+          url: '/todo/projects',
+        },
+        {
+          title: 'All Lists',
+          url: '/todo/lists',
+        },
+      ],
     },
     {
       title: 'Budgeting',
