@@ -28,7 +28,7 @@ projects_router.register(r"lists", ProjectListViewSet, basename="project-lists")
 
 # Nested router for lists/{id}/items/
 lists_router = routers.NestedDefaultRouter(router, r"lists", lookup="list")
-lists_router.register(r"items", ListItemViewSet, basename="list-items")
+lists_router.register(r"items", ListItemViewSet, basename="todolist-items")
 
 # Combine all URL patterns
 urlpatterns = router.urls + projects_router.urls + lists_router.urls

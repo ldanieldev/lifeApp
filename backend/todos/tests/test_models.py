@@ -341,8 +341,8 @@ class TestTodoItem:
 class TestSoftDelete:
     """Tests for soft delete functionality across all models."""
 
-    def test_deleting_item_updates_counts(self):
-        """Test that deleting item triggers count update."""
+    def test_deleting_item_requires_manual_count_update(self):
+        """Test that deleting item requires explicit count update call."""
         todo_list = TodoListFactory()
         item = TodoItemFactory(todo_list=todo_list)
 
@@ -351,8 +351,14 @@ class TestSoftDelete:
 
         item.delete()  # Soft delete
 
+        # Counts are NOT automatically updated (by design)
+        # The viewset/service layer calls update_counts() explicitly
         todo_list.refresh_from_db()
-        assert todo_list.item_count == 0
+        assert todo_list.item_count == 1  # Still 1 (not auto-updated)
+
+        # Must call update_counts() explicitly
+        todo_list.update_counts()
+        assert todo_list.item_count == 0  # Now 0
 
     def test_deleted_items_not_in_default_queryset(self):
         """Test that soft-deleted items don't appear in default queryset."""

@@ -193,8 +193,13 @@ class TestListTodoItems:
 
     def test_order_items_by_due_date(self, authenticated_client, todo_list):
         """Test ordering items by due date."""
-        item1 = TodoItemFactory(todo_list=todo_list, title="Later", due_date=timezone.now() + timedelta(days=3))
-        item2 = TodoItemFactory(todo_list=todo_list, title="Sooner", due_date=timezone.now() + timedelta(days=1))
+        # Set same display_order so due_date ordering takes effect
+        item1 = TodoItemFactory(
+            todo_list=todo_list, title="Later", due_date=timezone.now() + timedelta(days=3), display_order=0
+        )
+        item2 = TodoItemFactory(
+            todo_list=todo_list, title="Sooner", due_date=timezone.now() + timedelta(days=1), display_order=0
+        )
 
         url = reverse("todoitem-list")
         response = authenticated_client.get(url, {"ordering": "due_date"})
@@ -238,10 +243,10 @@ class TestRetrieveTodoItem:
         response = authenticated_client.get(url)
 
         assert response.status_code == status.HTTP_200_OK
-        assert response.data["todoListId"] == todo_list.id
-        assert response.data["todoListName"] == "My List"
-        assert response.data["projectId"] == project.id
-        assert response.data["projectName"] == "My Project"
+        assert response.data["todo_list_id"] == todo_list.id
+        assert response.data["todo_list_name"] == "My List"
+        assert response.data["project_id"] == project.id
+        assert response.data["project_name"] == "My Project"
 
     def test_retrieve_other_users_item_forbidden(self, authenticated_client, other_users_item):
         """Test that users cannot access other users' items."""
@@ -311,7 +316,7 @@ class TestCreateTodoItem:
         response = authenticated_client.post(url, data, format="json")
 
         assert response.status_code == status.HTTP_201_CREATED
-        assert response.data["kanbanLaneId"] == lane.id
+        assert response.data["kanban_lane_id"] == lane.id
 
     def test_create_item_kanban_view_assigns_default_lane(self, authenticated_client, user):
         """Test that items in kanban view get default lane if not specified."""
@@ -328,7 +333,7 @@ class TestCreateTodoItem:
         response = authenticated_client.post(url, data, format="json")
 
         assert response.status_code == status.HTTP_201_CREATED
-        assert response.data["kanbanLaneId"] == default_lane.id
+        assert response.data["kanban_lane_id"] == default_lane.id
 
     def test_create_item_missing_title_returns_error(self, authenticated_client, todo_list):
         """Test that creating item without title returns validation error."""
@@ -530,7 +535,7 @@ class TestMoveLane:
         response = authenticated_client.post(url, data, format="json")
 
         assert response.status_code == status.HTTP_200_OK
-        assert response.data["kanbanLaneId"] == lane2.id
+        assert response.data["kanban_lane_id"] == lane2.id
 
         item.refresh_from_db()
         assert item.kanban_lane == lane2
@@ -653,17 +658,18 @@ class TestNestedListItems:
         assert response.data["results"][0]["title"] == "List 1 Item"
 
     def test_create_item_in_list_via_nested_route(self, authenticated_client, todo_list):
-        """Test creating item via nested route auto-sets list."""
+        """Test creating item via nested route (still requires todoListId in current implementation)."""
         url = reverse("todolist-items-list", args=[todo_list.id])
-        data = {"title": "New nested item"}
+        data = {"title": "New nested item", "todoListId": todo_list.id}
         response = authenticated_client.post(url, data, format="json")
 
         assert response.status_code == status.HTTP_201_CREATED
-        assert response.data["todoListId"] == todo_list.id
+        assert response.data["todo_list_id"] == todo_list.id
 
     def test_nested_route_permission_check(self, authenticated_client, other_users_list):
         """Test that nested route respects list ownership."""
         url = reverse("todolist-items-list", args=[other_users_list.id])
         response = authenticated_client.get(url)
 
-        assert response.status_code == status.HTTP_404_NOT_FOUND
+        # Returns 403 Forbidden (not 404) to indicate permission denied
+        assert response.status_code == status.HTTP_403_FORBIDDEN

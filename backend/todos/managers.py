@@ -118,6 +118,18 @@ class TodoItemManagerMixin:
         cutoff = timezone.now() - timedelta(minutes=minutes)
         return self.filter(status="completed", completed_at__gte=cutoff, is_deleted=False).order_by("-completed_at")
 
+    def recently_completed(self, minutes=5):
+        """Alias for undoable() - get recently completed items.
+
+        Args:
+            minutes: Look-back window in minutes
+
+        Returns:
+            QuerySet of recently completed items
+
+        """
+        return self.undoable(minutes=minutes)
+
     def overdue(self):
         """Get overdue items (due_date passed and not completed).
 

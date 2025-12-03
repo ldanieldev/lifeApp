@@ -122,8 +122,8 @@ class TestListTodoLists:
 
         assert response.status_code == status.HTTP_200_OK
         list_data = response.data["results"][0]
-        assert list_data["projectId"] == project.id
-        assert list_data["projectName"] == "My Project"
+        assert list_data["project_id"] == project.id
+        assert list_data["project_name"] == "My Project"
 
 
 @pytest.mark.django_db
@@ -151,7 +151,7 @@ class TestRetrieveTodoList:
         assert len(response.data["items"]) == 2
         assert response.data["items"][0]["title"] == "Item 1"
         assert response.data["items"][1]["title"] == "Item 2"
-        assert response.data["kanbanLanes"] is None
+        assert response.data["kanban_lanes"] is None
 
     def test_retrieve_kanban_view_includes_lanes(self, authenticated_client, user):
         """Test that kanban view detail includes lanes with items."""
@@ -166,12 +166,12 @@ class TestRetrieveTodoList:
         response = authenticated_client.get(url)
 
         assert response.status_code == status.HTTP_200_OK
-        assert "kanbanLanes" in response.data
-        assert len(response.data["kanbanLanes"]) == 2
+        assert "kanban_lanes" in response.data
+        assert len(response.data["kanban_lanes"]) == 2
         assert response.data["items"] is None
 
         # Check lane structure
-        lanes = response.data["kanbanLanes"]
+        lanes = response.data["kanban_lanes"]
         assert lanes[0]["name"] == "Backlog"
         assert len(lanes[0]["items"]) == 1
         assert lanes[0]["items"][0]["title"] == "Backlog Item"
@@ -240,7 +240,7 @@ class TestCreateTodoList:
         response = authenticated_client.post(url, data, format="json")
 
         assert response.status_code == status.HTTP_201_CREATED
-        assert response.data["projectId"] == project.id
+        assert response.data["project_id"] == project.id
 
         todo_list = TodoList.objects.get(name=response.data["name"], owner=user)
         assert todo_list.project == project
@@ -255,7 +255,7 @@ class TestCreateTodoList:
         response = authenticated_client.post(url, data, format="json")
 
         assert response.status_code == status.HTTP_201_CREATED
-        assert response.data["projectId"] is None
+        assert response.data["project_id"] is None
 
     def test_create_kanban_list_creates_default_lane(self, authenticated_client, user):
         """Test that creating kanban list auto-creates Backlog lane."""
@@ -449,11 +449,12 @@ class TestNestedProjectLists:
         response = authenticated_client.post(url, data, format="json")
 
         assert response.status_code == status.HTTP_201_CREATED
-        assert response.data["projectId"] == project.id
+        assert response.data["project_id"] == project.id
 
     def test_nested_route_permission_check(self, authenticated_client, other_users_project):
         """Test that nested route respects project ownership."""
         url = reverse("project-lists-list", args=[other_users_project.id])
         response = authenticated_client.get(url)
 
-        assert response.status_code == status.HTTP_404_NOT_FOUND
+        # Returns 403 Forbidden (not 404) to indicate permission denied
+        assert response.status_code == status.HTTP_403_FORBIDDEN

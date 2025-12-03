@@ -435,6 +435,10 @@ class TodoItemManager(SoftDeleteManager):
             .select_related("todo_list", "kanban_lane", "todo_list__project")
         )
 
+    def recently_completed(self, minutes=5):
+        """Proxy to queryset method."""
+        return self.get_queryset().recently_completed(minutes=minutes)
+
     def for_user(self, user):
         """Get all items for a specific user (across all lists)."""
         return self.filter(todo_list__owner=user)
