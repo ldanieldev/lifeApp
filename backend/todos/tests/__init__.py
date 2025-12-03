@@ -1,3 +1,2 @@
-"""
-Tests for todos app.
+"""Tests for todos app.
 """

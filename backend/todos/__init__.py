@@ -1,5 +1,4 @@
-"""
-Todo application for managing projects, lists, and items.
+"""Todo application for managing projects, lists, and items.
 
 Pluggable Django app following best practices.
 """
