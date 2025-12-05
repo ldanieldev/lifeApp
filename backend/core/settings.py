@@ -71,6 +71,7 @@ INSTALLED_APPS = [
     "users",
     "authentication",
     "emails",
+    "todos",
     "core",
 ]
 
