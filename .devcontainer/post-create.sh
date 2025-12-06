@@ -3,6 +3,10 @@
 echo "🚀 Starting post-create setup..."
 cd /workspace
 
+# Initialize Garage S3 storage (bucket and access key)
+echo "🗄️ Initializing Garage S3 storage..."
+bash /workspace/config/garage-init.sh
+
 # Create and activate virtual environment
 echo "📦 Setting up Python virtual environment..."
 uv venv .venv --clear
