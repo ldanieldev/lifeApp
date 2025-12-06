@@ -91,6 +91,49 @@ services:
     depends_on:
       - app
 
+  garage:
+    image: dxflrs/garage:v1.1.0
+    volumes:
+      - garage_meta:/var/lib/garage/meta
+      - garage_data:/var/lib/garage/data
+      - ../config/garage.toml:/etc/garage.toml:ro
+    environment:
+      - GARAGE_CONFIG_FILE=/etc/garage.toml
+    # RPC secret is hardcoded in garage.toml for development
+    # No external ports - only accessible within Docker network
+
+  celery-worker:
+    image: mcr.microsoft.com/devcontainers/python:3.13
+    working_dir: /workspace/backend
+    command: >
+      bash -c "pip install -r requirements.txt &&
+               celery -A core worker -l INFO"
+    volumes:
+      - ..:/workspace:cached
+    env_file:
+      - ../.env
+    environment:
+      - DATABASE_URL=postgresql://${DB_USER:-postgres}:${DB_PASSWORD:-postgres}@db:${DB_PORT:-5432}/${POSTGRES_DB:-life_app}
+    depends_on:
+      - db
+      - redis
+
+  celery-beat:
+    image: mcr.microsoft.com/devcontainers/python:3.13
+    working_dir: /workspace/backend
+    command: >
+      bash -c "pip install -r requirements.txt &&
+               celery -A core beat -l INFO --scheduler django_celery_beat.schedulers:DatabaseScheduler"
+    volumes:
+      - ..:/workspace:cached
+    env_file:
+      - ../.env
+    environment:
+      - DATABASE_URL=postgresql://${DB_USER:-postgres}:${DB_PASSWORD:-postgres}@db:${DB_PORT:-5432}/${POSTGRES_DB:-life_app}
+    depends_on:
+      - db
+      - redis
+
 volumes:
   postgres_data:
   redis_data:
@@ -98,3 +141,5 @@ volumes:
   elasticsearch_data:
   prometheus_data:
   vscode-server:
+  garage_meta:
+  garage_data:

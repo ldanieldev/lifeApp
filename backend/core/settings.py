@@ -67,6 +67,8 @@ INSTALLED_APPS = [
     "allauth.usersessions",
     # Monitoring
     "django_prometheus",
+    # Async Task Queue
+    "django_celery_beat",
     # Custom apps
     "users",
     "authentication",
@@ -180,6 +182,42 @@ USE_TZ = True
 # https://docs.djangoproject.com/en/5.2/howto/static-files/
 
 STATIC_URL = "static/"
+
+# ============================================================================
+# FILE STORAGE (Garage S3-compatible)
+# ============================================================================
+STORAGES = {
+    "default": {
+        "BACKEND": "storages.backends.s3.S3Storage",
+    },
+    "staticfiles": {
+        "BACKEND": "django.contrib.staticfiles.storage.StaticFilesStorage",
+    },
+}
+
+AWS_S3_ENDPOINT_URL = env("AWS_S3_ENDPOINT_URL", default="http://garage:3900")
+AWS_ACCESS_KEY_ID = env("GARAGE_ACCESS_KEY", default="")
+AWS_SECRET_ACCESS_KEY = env("GARAGE_SECRET_KEY", default="")
+AWS_STORAGE_BUCKET_NAME = env("AWS_STORAGE_BUCKET_NAME", default="life-app")
+AWS_S3_REGION_NAME = "garage"
+AWS_S3_FILE_OVERWRITE = False
+AWS_DEFAULT_ACL = None
+AWS_QUERYSTRING_AUTH = True  # Signed URLs for private files
+
+# File upload limits
+FILE_UPLOAD_MAX_MEMORY_SIZE = 20 * 1024 * 1024  # 20MB
+DATA_UPLOAD_MAX_MEMORY_SIZE = 20 * 1024 * 1024
+
+# ============================================================================
+# CELERY CONFIGURATION
+# ============================================================================
+CELERY_BROKER_URL = env("CELERY_BROKER_URL", default=REDIS_URL)
+CELERY_RESULT_BACKEND = env("CELERY_RESULT_BACKEND", default=REDIS_URL)
+CELERY_ACCEPT_CONTENT = ["json"]
+CELERY_TASK_SERIALIZER = "json"
+CELERY_RESULT_SERIALIZER = "json"
+CELERY_TIMEZONE = "UTC"
+CELERY_BEAT_SCHEDULER = "django_celery_beat.schedulers:DatabaseScheduler"
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/5.2/ref/settings/#default-auto-field

@@ -35,6 +35,7 @@ def configure_telemetry():
 
     from opentelemetry import trace
     from opentelemetry.exporter.otlp.proto.grpc.trace_exporter import OTLPSpanExporter
+    from opentelemetry.instrumentation.celery import CeleryInstrumentor
     from opentelemetry.instrumentation.django import DjangoInstrumentor
     from opentelemetry.instrumentation.psycopg import PsycopgInstrumentor
     from opentelemetry.instrumentation.redis import RedisInstrumentor
@@ -65,11 +66,12 @@ def configure_telemetry():
     trace_provider.add_span_processor(BatchSpanProcessor(trace_exporter))
     trace.set_tracer_provider(trace_provider)
 
-    # Auto-instrument Django, PostgreSQL, Redis, and Requests for tracing
+    # Auto-instrument Django, PostgreSQL, Redis, Requests, and Celery for tracing
     DjangoInstrumentor().instrument()
     PsycopgInstrumentor().instrument()
     RedisInstrumentor().instrument()
     RequestsInstrumentor().instrument()
+    CeleryInstrumentor().instrument()
 
     logger.info(f"OpenTelemetry configured: service={service_name}, env={environment}, tempo={tempo_endpoint}")
 
