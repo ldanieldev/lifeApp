@@ -1,6 +1,7 @@
 import { emailAPI, sessionAPI, socialAccountAPI, webAuthnAPI } from '@/api/allauth';
 import type { AuthFlow, EmailAddress, SocialAccount, UserSession } from '@/api/allauth.types';
 import { authApi } from '@/api/auth';
+import { NotificationSettings } from '@/components/NotificationSettings';
 import { PasswordChangeForm } from '@/components/passwordChangeForm';
 import { ProtectedRoute } from '@/components/protectedRoute';
 import { Badge } from '@/components/shadcn/badge';
@@ -648,6 +649,9 @@ function AccountPage() {
             <PasswordChangeForm />
           </CardContent>
         </Card>
+
+        {/* Notification Settings */}
+        <NotificationSettings />
 
         {/* Connected Providers */}
         <Card>

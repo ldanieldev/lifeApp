@@ -13,6 +13,7 @@ django-elasticsearch-dsl~=9.0.0
 django-filter~=25.2.0
 drf-spectacular~=0.29.0
 requests~=2.32.5
+pywebpush~=2.1.2
 
 # Object Storage (S3-compatible via Garage)
 django-storages[s3]~=1.14.6

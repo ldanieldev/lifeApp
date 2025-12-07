@@ -3,9 +3,19 @@
 echo "🚀 Starting post-create setup..."
 cd /workspace
 
+# Update package managers
+echo "📦 Updating package managers..."
+pip install --upgrade uv
+pip install --upgrade pip
+pnpm self-update
+
 # Initialize Garage S3 storage (bucket and access key)
 echo "🗄️ Initializing Garage S3 storage..."
 bash /workspace/config/garage-init.sh
+
+# Initialize VAPID keys for Web Push notifications
+echo "🔔 Initializing VAPID keys for push notifications..."
+bash /workspace/config/vapid-init.sh
 
 # Create and activate virtual environment
 echo "📦 Setting up Python virtual environment..."

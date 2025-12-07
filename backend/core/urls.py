@@ -21,6 +21,8 @@ urlpatterns = [
     path("api/auth/", include("authentication.urls")),
     # Todos API
     path("api/todos/", include("todos.urls")),
+    # Notifications API
+    path("api/notifications/", include("notifications.urls")),
     # API Documentation
     path("api/schema/", SpectacularAPIView.as_view(), name="schema"),
     path(

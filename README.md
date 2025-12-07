@@ -62,6 +62,16 @@ GARAGE_SECRET_KEY=0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcd
 AWS_STORAGE_BUCKET_NAME=life-app
 
 # =============================================================================
+# VAPID (Web Push Notifications)
+# =============================================================================
+# Deterministic dev credentials - DO NOT use in production!
+# These match the values auto-configured by vapid-init.sh
+# Generate new keys with: npx web-push generate-vapid-keys --json
+VAPID_PUBLIC_KEY=BLGTOUpFTghdMgPqhoSMaiqTIVZrSJ67pGDswTdf8HBdBVw6Yjd9I8kyCsjKiZum0rbi4djguv7jEy89_9IpfvQ
+VAPID_PRIVATE_KEY=3zgRzcvXsKSyyIK0lpJ79BUSyAkyf3AduNiAKP5On08
+VAPID_ADMIN_EMAIL=dev@life-app.local
+
+# =============================================================================
 # CELERY (optional - defaults to REDIS_URL)
 # =============================================================================
 # CELERY_BROKER_URL=redis://redis:6379/0
@@ -148,6 +158,22 @@ CELERY_BROKER_URL=redis://your-redis-host:6379/0
 CELERY_RESULT_BACKEND=redis://your-redis-host:6379/0
 ```
 
+#### VAPID Keys (Web Push Notifications)
+
+Generate unique VAPID keys for production:
+
+```bash
+# Generate keys
+npx web-push generate-vapid-keys --json
+
+# Add to environment
+VAPID_PUBLIC_KEY=<generated-public-key>
+VAPID_PRIVATE_KEY=<generated-private-key>
+VAPID_ADMIN_EMAIL=admin@yourdomain.com
+```
+
+**Important:** Never reuse development VAPID keys in production. Each environment should have unique keys.
+
 #### Observability (Optional)
 
 ```bash
@@ -195,6 +221,7 @@ Before deploying to production, verify:
 - [ ] Redis is secured (password or network isolation)
 - [ ] Email credentials are stored securely (use environment variables, not hardcoded)
 - [ ] OAuth credentials are production keys (not development)
+- [ ] VAPID keys are unique (not development keys)
 - [ ] HTTPS is enabled (required for secure cookies and WebAuthn)
 - [ ] `MFA_WEBAUTHN_ALLOW_INSECURE_ORIGIN=False` (default in production)
 

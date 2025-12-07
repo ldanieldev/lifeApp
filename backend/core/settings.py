@@ -74,6 +74,7 @@ INSTALLED_APPS = [
     "authentication",
     "emails",
     "todos",
+    "notifications",
     "core",
 ]
 
@@ -218,6 +219,14 @@ CELERY_TASK_SERIALIZER = "json"
 CELERY_RESULT_SERIALIZER = "json"
 CELERY_TIMEZONE = "UTC"
 CELERY_BEAT_SCHEDULER = "django_celery_beat.schedulers:DatabaseScheduler"
+
+# ============================================================================
+# WEB PUSH (VAPID) CONFIGURATION
+# ============================================================================
+# Generate VAPID keys with: npx web-push generate-vapid-keys
+VAPID_PUBLIC_KEY = env("VAPID_PUBLIC_KEY", default="")
+VAPID_PRIVATE_KEY = env("VAPID_PRIVATE_KEY", default="")
+VAPID_ADMIN_EMAIL = env("VAPID_ADMIN_EMAIL", default="admin@example.com")
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/5.2/ref/settings/#default-auto-field
@@ -457,6 +466,11 @@ LOGGING = {
             "propagate": True,
         },
         "users": {
+            "handlers": ["console"],
+            "level": CUSTOM_APP_LOG_LEVEL,
+            "propagate": True,
+        },
+        "notifications": {
             "handlers": ["console"],
             "level": CUSTOM_APP_LOG_LEVEL,
             "propagate": True,
