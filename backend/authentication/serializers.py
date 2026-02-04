@@ -4,7 +4,6 @@ Custom serializers for authentication-related data will be defined here.
 """
 
 from rest_framework import serializers
-
 from users.models import User
 
 

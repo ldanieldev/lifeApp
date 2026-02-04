@@ -11,7 +11,7 @@ import {
   SidebarRail,
 } from '@/components/shadcn/sidebar';
 import { Link } from '@tanstack/react-router';
-import { BanknoteIcon, BookHeartIcon, CarIcon, HeartPulseIcon, ListTodoIcon, SignatureIcon } from 'lucide-react';
+import { CarIcon, ListTodoIcon, SignatureIcon } from 'lucide-react';
 import * as React from 'react';
 
 const data = {
@@ -33,52 +33,19 @@ const data = {
       ],
     },
     {
-      title: 'Budgeting',
-      url: '/budgeting',
-      icon: BanknoteIcon,
-      items: [
-        {
-          title: 'Dashboard',
-          url: '#',
-        },
-        {
-          title: 'Bills',
-          url: '#',
-        },
-        {
-          title: 'Portfolio',
-          url: '#',
-        },
-      ],
-    },
-    {
       title: 'Car Journal',
       url: '/car-journal',
       icon: CarIcon,
       items: [
         {
-          title: 'Service History',
-          url: '#',
+          title: 'My Vehicles',
+          url: '/car-journal',
         },
         {
-          title: 'Maintenance Intervals',
-          url: '#',
-        },
-        {
-          title: 'Service Recalls',
-          url: '#',
+          title: 'Service Shops',
+          url: '/car-journal/shops',
         },
       ],
-    },
-    {
-      title: 'Fitness',
-      url: '/fitness',
-      icon: HeartPulseIcon,
-    },
-    {
-      title: 'Habits',
-      url: '/habits',
-      icon: BookHeartIcon,
     },
   ],
 };

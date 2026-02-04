@@ -10,9 +10,12 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as TodoRouteImport } from './routes/todo'
+import { Route as CarJournalRouteImport } from './routes/car-journal'
 import { Route as AccountRouteImport } from './routes/account'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as TodoIndexRouteImport } from './routes/todo/index'
+import { Route as CarJournalIndexRouteImport } from './routes/car-journal/index'
+import { Route as CarJournalShopsRouteImport } from './routes/car-journal/shops'
 import { Route as AuthVerifyEmailRouteImport } from './routes/auth/verify-email'
 import { Route as AuthRegisterRouteImport } from './routes/auth/register'
 import { Route as AuthLoginRouteImport } from './routes/auth/login'
@@ -32,6 +35,11 @@ const TodoRoute = TodoRouteImport.update({
   path: '/todo',
   getParentRoute: () => rootRouteImport,
 } as any)
+const CarJournalRoute = CarJournalRouteImport.update({
+  id: '/car-journal',
+  path: '/car-journal',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AccountRoute = AccountRouteImport.update({
   id: '/account',
   path: '/account',
@@ -46,6 +54,16 @@ const TodoIndexRoute = TodoIndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => TodoRoute,
+} as any)
+const CarJournalIndexRoute = CarJournalIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => CarJournalRoute,
+} as any)
+const CarJournalShopsRoute = CarJournalShopsRouteImport.update({
+  id: '/shops',
+  path: '/shops',
+  getParentRoute: () => CarJournalRoute,
 } as any)
 const AuthVerifyEmailRoute = AuthVerifyEmailRouteImport.update({
   id: '/auth/verify-email',
@@ -117,11 +135,14 @@ const AuthPasswordResetKeyRoute = AuthPasswordResetKeyRouteImport.update({
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/account': typeof AccountRoute
+  '/car-journal': typeof CarJournalRouteWithChildren
   '/todo': typeof TodoRouteWithChildren
   '/auth/create-passkey': typeof AuthCreatePasskeyRoute
   '/auth/login': typeof AuthLoginRoute
   '/auth/register': typeof AuthRegisterRoute
   '/auth/verify-email': typeof AuthVerifyEmailRoute
+  '/car-journal/shops': typeof CarJournalShopsRoute
+  '/car-journal/': typeof CarJournalIndexRoute
   '/todo/': typeof TodoIndexRoute
   '/auth/authenticate/webauthn': typeof AuthAuthenticateWebauthnRoute
   '/auth/callback/$provider': typeof AuthCallbackProviderRoute
@@ -140,6 +161,8 @@ export interface FileRoutesByTo {
   '/auth/login': typeof AuthLoginRoute
   '/auth/register': typeof AuthRegisterRoute
   '/auth/verify-email': typeof AuthVerifyEmailRoute
+  '/car-journal/shops': typeof CarJournalShopsRoute
+  '/car-journal': typeof CarJournalIndexRoute
   '/todo': typeof TodoIndexRoute
   '/auth/authenticate/webauthn': typeof AuthAuthenticateWebauthnRoute
   '/auth/callback/$provider': typeof AuthCallbackProviderRoute
@@ -155,11 +178,14 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/account': typeof AccountRoute
+  '/car-journal': typeof CarJournalRouteWithChildren
   '/todo': typeof TodoRouteWithChildren
   '/auth/create-passkey': typeof AuthCreatePasskeyRoute
   '/auth/login': typeof AuthLoginRoute
   '/auth/register': typeof AuthRegisterRoute
   '/auth/verify-email': typeof AuthVerifyEmailRoute
+  '/car-journal/shops': typeof CarJournalShopsRoute
+  '/car-journal/': typeof CarJournalIndexRoute
   '/todo/': typeof TodoIndexRoute
   '/auth/authenticate/webauthn': typeof AuthAuthenticateWebauthnRoute
   '/auth/callback/$provider': typeof AuthCallbackProviderRoute
@@ -176,11 +202,14 @@ export interface FileRouteTypes {
   fullPaths:
     | '/'
     | '/account'
+    | '/car-journal'
     | '/todo'
     | '/auth/create-passkey'
     | '/auth/login'
     | '/auth/register'
     | '/auth/verify-email'
+    | '/car-journal/shops'
+    | '/car-journal/'
     | '/todo/'
     | '/auth/authenticate/webauthn'
     | '/auth/callback/$provider'
@@ -199,6 +228,8 @@ export interface FileRouteTypes {
     | '/auth/login'
     | '/auth/register'
     | '/auth/verify-email'
+    | '/car-journal/shops'
+    | '/car-journal'
     | '/todo'
     | '/auth/authenticate/webauthn'
     | '/auth/callback/$provider'
@@ -213,11 +244,14 @@ export interface FileRouteTypes {
     | '__root__'
     | '/'
     | '/account'
+    | '/car-journal'
     | '/todo'
     | '/auth/create-passkey'
     | '/auth/login'
     | '/auth/register'
     | '/auth/verify-email'
+    | '/car-journal/shops'
+    | '/car-journal/'
     | '/todo/'
     | '/auth/authenticate/webauthn'
     | '/auth/callback/$provider'
@@ -233,6 +267,7 @@ export interface FileRouteTypes {
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AccountRoute: typeof AccountRoute
+  CarJournalRoute: typeof CarJournalRouteWithChildren
   TodoRoute: typeof TodoRouteWithChildren
   AuthCreatePasskeyRoute: typeof AuthCreatePasskeyRoute
   AuthLoginRoute: typeof AuthLoginRoute
@@ -252,6 +287,13 @@ declare module '@tanstack/react-router' {
       path: '/todo'
       fullPath: '/todo'
       preLoaderRoute: typeof TodoRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/car-journal': {
+      id: '/car-journal'
+      path: '/car-journal'
+      fullPath: '/car-journal'
+      preLoaderRoute: typeof CarJournalRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/account': {
@@ -274,6 +316,20 @@ declare module '@tanstack/react-router' {
       fullPath: '/todo/'
       preLoaderRoute: typeof TodoIndexRouteImport
       parentRoute: typeof TodoRoute
+    }
+    '/car-journal/': {
+      id: '/car-journal/'
+      path: '/'
+      fullPath: '/car-journal/'
+      preLoaderRoute: typeof CarJournalIndexRouteImport
+      parentRoute: typeof CarJournalRoute
+    }
+    '/car-journal/shops': {
+      id: '/car-journal/shops'
+      path: '/shops'
+      fullPath: '/car-journal/shops'
+      preLoaderRoute: typeof CarJournalShopsRouteImport
+      parentRoute: typeof CarJournalRoute
     }
     '/auth/verify-email': {
       id: '/auth/verify-email'
@@ -369,6 +425,20 @@ declare module '@tanstack/react-router' {
   }
 }
 
+interface CarJournalRouteChildren {
+  CarJournalShopsRoute: typeof CarJournalShopsRoute
+  CarJournalIndexRoute: typeof CarJournalIndexRoute
+}
+
+const CarJournalRouteChildren: CarJournalRouteChildren = {
+  CarJournalShopsRoute: CarJournalShopsRoute,
+  CarJournalIndexRoute: CarJournalIndexRoute,
+}
+
+const CarJournalRouteWithChildren = CarJournalRoute._addFileChildren(
+  CarJournalRouteChildren,
+)
+
 interface TodoRouteChildren {
   TodoIndexRoute: typeof TodoIndexRoute
   TodoListsListIdRoute: typeof TodoListsListIdRoute
@@ -390,6 +460,7 @@ const TodoRouteWithChildren = TodoRoute._addFileChildren(TodoRouteChildren)
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AccountRoute: AccountRoute,
+  CarJournalRoute: CarJournalRouteWithChildren,
   TodoRoute: TodoRouteWithChildren,
   AuthCreatePasskeyRoute: AuthCreatePasskeyRoute,
   AuthLoginRoute: AuthLoginRoute,

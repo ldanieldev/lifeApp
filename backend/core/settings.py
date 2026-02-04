@@ -75,6 +75,7 @@ INSTALLED_APPS = [
     "emails",
     "todos",
     "notifications",
+    "vehicle_maintenance_tracker",
     "core",
 ]
 
@@ -197,6 +198,9 @@ STORAGES = {
 }
 
 AWS_S3_ENDPOINT_URL = env("AWS_S3_ENDPOINT_URL", default="http://garage:3900")
+# Public endpoint URL for presigned URLs (browser-accessible)
+# In development, this should be localhost:3900 since garage:3900 is only accessible within Docker
+AWS_S3_PUBLIC_URL = env("AWS_S3_PUBLIC_URL", default="http://localhost:3900")
 AWS_ACCESS_KEY_ID = env("GARAGE_ACCESS_KEY", default="")
 AWS_SECRET_ACCESS_KEY = env("GARAGE_SECRET_KEY", default="")
 AWS_STORAGE_BUCKET_NAME = env("AWS_STORAGE_BUCKET_NAME", default="life-app")

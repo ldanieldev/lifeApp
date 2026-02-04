@@ -37,15 +37,18 @@ max-complexity = 10
 known-third-party = ["django", "rest_framework"]
 
 [tool.ruff.lint.per-file-ignores]
-"__init__.py" = ["F401"]
+"__init__.py" = ["F401", "D104"]
 "test_*.py" = ["S101"]
-"tests.py" = ["S101"]
+"tests.py" = ["S101", "D100"]
+"apps.py" = ["D100"]
 "conftest.py" = ["S101"]
 "create_test_data.py" = ["E402"]
-"*/migrations/*.py" = ["D100", "D101"]  # Migrations don't need module/class docstrings
-"**/migrations/*.py" = ["D100", "D101"]  # Migrations don't need module/class docstrings
+"*/migrations/*.py" = ["D100", "D101", "E501"]  # Migrations don't need module/class docstrings, allow long lines
+"**/migrations/*.py" = ["D100", "D101", "E501"]  # Migrations don't need module/class docstrings, allow long lines
 "models.py" = ["D106", "D105"]  # Meta classes and __str__ don't need docstrings
 "serializers.py" = ["D106"]  # Meta classes don't need docstrings
+"factories.py" = ["D106"]  # Meta classes don't need docstrings
+"filters.py" = ["D106"]  # Meta classes don't need docstrings
 
 [tool.pytest.ini_options]
 DJANGO_SETTINGS_MODULE = "core.settings"

@@ -54,8 +54,8 @@ class TestProject:
     def test_update_counts(self):
         """Test updating counts from child lists."""
         project = ProjectFactory()
-        list1 = TodoListFactory(project=project, item_count=5, completed_count=2)
-        list2 = TodoListFactory(project=project, item_count=3, completed_count=3)
+        TodoListFactory(project=project, item_count=5, completed_count=2)
+        TodoListFactory(project=project, item_count=3, completed_count=3)
 
         project.update_counts()
 
@@ -65,7 +65,7 @@ class TestProject:
     def test_update_counts_ignores_deleted_lists(self):
         """Test update_counts ignores soft-deleted lists."""
         project = ProjectFactory()
-        list1 = TodoListFactory(project=project, item_count=5, completed_count=2)
+        TodoListFactory(project=project, item_count=5, completed_count=2)
         list2 = TodoListFactory(project=project, item_count=3, completed_count=3)
         list2.delete()  # Soft delete
 

@@ -27,7 +27,7 @@ from todos.models import TodoList
 
 @pytest.mark.django_db
 class TestListTodoLists:
-    """Tests for GET /api/todos/lists/"""
+    """Tests for GET /api/todos/lists/."""
 
     def test_list_todo_lists_requires_authentication(self, api_client):
         """Test that unauthenticated requests return 401."""
@@ -77,8 +77,8 @@ class TestListTodoLists:
         project2 = ProjectFactory(owner=user)
 
         list1 = TodoListFactory(owner=user, project=project1)
-        list2 = TodoListFactory(owner=user, project=project2)
-        standalone = StandaloneTodoListFactory(owner=user)
+        TodoListFactory(owner=user, project=project2)
+        StandaloneTodoListFactory(owner=user)
 
         url = reverse("todolist-list")
         response = authenticated_client.get(url, {"project": project1.id})
@@ -90,9 +90,9 @@ class TestListTodoLists:
     def test_filter_standalone_lists(self, authenticated_client, user):
         """Test filtering standalone lists (no project)."""
         project = ProjectFactory(owner=user)
-        project_list = TodoListFactory(owner=user, project=project)
-        standalone1 = StandaloneTodoListFactory(owner=user)
-        standalone2 = StandaloneTodoListFactory(owner=user)
+        TodoListFactory(owner=user, project=project)
+        StandaloneTodoListFactory(owner=user)
+        StandaloneTodoListFactory(owner=user)
 
         url = reverse("todolist-list")
         response = authenticated_client.get(url, {"standalone": "true"})
@@ -115,7 +115,7 @@ class TestListTodoLists:
     def test_list_includes_project_info(self, authenticated_client, user):
         """Test that list includes project ID and name."""
         project = ProjectFactory(owner=user, name="My Project")
-        todo_list = TodoListFactory(owner=user, project=project)
+        TodoListFactory(owner=user, project=project)
 
         url = reverse("todolist-list")
         response = authenticated_client.get(url)
@@ -128,7 +128,7 @@ class TestListTodoLists:
 
 @pytest.mark.django_db
 class TestRetrieveTodoList:
-    """Tests for GET /api/todos/lists/{id}/"""
+    """Tests for GET /api/todos/lists/{id}/."""
 
     def test_retrieve_list_requires_authentication(self, api_client, todo_list):
         """Test that unauthenticated requests return 401."""
@@ -140,8 +140,8 @@ class TestRetrieveTodoList:
     def test_retrieve_list_view_includes_items(self, authenticated_client, user):
         """Test that list view detail includes items array."""
         todo_list = TodoListFactory(owner=user, view_mode=TodoList.ViewMode.LIST)
-        item1 = TodoItemFactory(todo_list=todo_list, title="Item 1", display_order=0)
-        item2 = TodoItemFactory(todo_list=todo_list, title="Item 2", display_order=1)
+        TodoItemFactory(todo_list=todo_list, title="Item 1", display_order=0)
+        TodoItemFactory(todo_list=todo_list, title="Item 2", display_order=1)
 
         url = reverse("todolist-detail", args=[todo_list.id])
         response = authenticated_client.get(url)
@@ -159,8 +159,8 @@ class TestRetrieveTodoList:
         backlog_lane = BacklogLaneFactory(todo_list=kanban_list, display_order=0)
         in_progress_lane = KanbanLaneFactory(todo_list=kanban_list, name="In Progress", display_order=1)
 
-        item1 = TodoItemFactory(todo_list=kanban_list, kanban_lane=backlog_lane, title="Backlog Item")
-        item2 = TodoItemFactory(todo_list=kanban_list, kanban_lane=in_progress_lane, title="In Progress Item")
+        TodoItemFactory(todo_list=kanban_list, kanban_lane=backlog_lane, title="Backlog Item")
+        TodoItemFactory(todo_list=kanban_list, kanban_lane=in_progress_lane, title="In Progress Item")
 
         url = reverse("todolist-detail", args=[kanban_list.id])
         response = authenticated_client.get(url)
@@ -181,7 +181,7 @@ class TestRetrieveTodoList:
 
     def test_retrieve_list_excludes_deleted_items(self, authenticated_client, todo_list):
         """Test that deleted items don't appear in list."""
-        active_item = TodoItemFactory(todo_list=todo_list, title="Active")
+        TodoItemFactory(todo_list=todo_list, title="Active")
         deleted_item = TodoItemFactory(todo_list=todo_list, title="Deleted")
         deleted_item.delete()
 
@@ -202,7 +202,7 @@ class TestRetrieveTodoList:
 
 @pytest.mark.django_db
 class TestCreateTodoList:
-    """Tests for POST /api/todos/lists/"""
+    """Tests for POST /api/todos/lists/."""
 
     def test_create_list_requires_authentication(self, api_client):
         """Test that unauthenticated requests return 401."""
@@ -286,7 +286,7 @@ class TestCreateTodoList:
 
 @pytest.mark.django_db
 class TestUpdateTodoList:
-    """Tests for PATCH /api/todos/lists/{id}/"""
+    """Tests for PATCH /api/todos/lists/{id}/."""
 
     def test_update_list_requires_authentication(self, api_client, todo_list):
         """Test that unauthenticated requests return 401."""
@@ -317,7 +317,7 @@ class TestUpdateTodoList:
 
 @pytest.mark.django_db
 class TestDeleteTodoList:
-    """Tests for DELETE /api/todos/lists/{id}/"""
+    """Tests for DELETE /api/todos/lists/{id}/."""
 
     def test_delete_list_requires_authentication(self, api_client, todo_list):
         """Test that unauthenticated requests return 401."""
@@ -363,7 +363,7 @@ class TestDeleteTodoList:
 
 @pytest.mark.django_db
 class TestSwitchViewMode:
-    """Tests for POST /api/todos/lists/{id}/switch_view/"""
+    """Tests for POST /api/todos/lists/{id}/switch_view/."""
 
     def test_switch_from_list_to_kanban(self, authenticated_client, user):
         """Test switching from list view to kanban view."""
@@ -406,7 +406,7 @@ class TestSwitchViewMode:
 
 @pytest.mark.django_db
 class TestRestoreTodoList:
-    """Tests for POST /api/todos/lists/{id}/restore/"""
+    """Tests for POST /api/todos/lists/{id}/restore/."""
 
     def test_restore_deleted_list(self, authenticated_client, user):
         """Test restoring a soft-deleted list."""
@@ -424,14 +424,14 @@ class TestRestoreTodoList:
 
 @pytest.mark.django_db
 class TestNestedProjectLists:
-    """Tests for nested route: /api/todos/projects/{id}/lists/"""
+    """Tests for nested route: /api/todos/projects/{id}/lists/."""
 
     def test_list_project_lists(self, authenticated_client, user):
         """Test listing lists within a project."""
         project = ProjectFactory(owner=user)
-        list1 = TodoListFactory(owner=user, project=project, name="List 1")
-        list2 = TodoListFactory(owner=user, project=project, name="List 2")
-        other_list = TodoListFactory(owner=user)  # Different project
+        TodoListFactory(owner=user, project=project, name="List 1")
+        TodoListFactory(owner=user, project=project, name="List 2")
+        TodoListFactory(owner=user)  # Different project
 
         url = reverse("project-lists-list", args=[project.id])
         response = authenticated_client.get(url)
