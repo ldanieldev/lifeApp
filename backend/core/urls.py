@@ -23,6 +23,8 @@ urlpatterns = [
     path("api/todos/", include("todos.urls")),
     # Notifications API
     path("api/notifications/", include("notifications.urls")),
+    # Vehicle Maintenance Tracker API
+    path("api/maintenance/", include("vehicle_maintenance_tracker.urls")),
     # API Documentation
     path("api/schema/", SpectacularAPIView.as_view(), name="schema"),
     path(

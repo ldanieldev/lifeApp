@@ -1,8 +1,6 @@
 This is an app to manage everyday parts of life:
 
 - todos
-- habits
-- fitness
 - car maintenance
 
 ## Environment Variables
@@ -278,5 +276,3 @@ The application uses environment-based configuration:
 - HTTPS-only cookies (`SESSION_COOKIE_SECURE`, `CSRF_COOKIE_SECURE`)
 - SMTP email delivery
 - WebAuthn requires HTTPS
-
-### Notes

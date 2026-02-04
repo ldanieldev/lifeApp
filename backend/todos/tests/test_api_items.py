@@ -35,7 +35,7 @@ from todos.models import TodoItem
 
 @pytest.mark.django_db
 class TestListTodoItems:
-    """Tests for GET /api/todos/items/"""
+    """Tests for GET /api/todos/items/."""
 
     def test_list_items_requires_authentication(self, api_client):
         """Test that unauthenticated requests return 401."""
@@ -83,7 +83,7 @@ class TestListTodoItems:
 
     def test_filter_items_by_priority(self, authenticated_client, todo_list):
         """Test filtering items by priority."""
-        low_priority = TodoItemFactory(todo_list=todo_list, priority=0)
+        TodoItemFactory(todo_list=todo_list, priority=0)
         high_priority = TodoItemFactory(todo_list=todo_list, priority=3)
 
         url = reverse("todoitem-list")
@@ -109,7 +109,7 @@ class TestListTodoItems:
     def test_filter_items_by_overdue(self, authenticated_client, todo_list):
         """Test filtering overdue items."""
         overdue_item = OverdueTodoItemFactory(todo_list=todo_list)
-        future_item = TodoItemFactory(todo_list=todo_list, due_date=timezone.now() + timedelta(days=1))
+        TodoItemFactory(todo_list=todo_list, due_date=timezone.now() + timedelta(days=1))
 
         url = reverse("todoitem-list")
         response = authenticated_client.get(url, {"is_overdue": "true"})
@@ -125,7 +125,7 @@ class TestListTodoItems:
         list2 = TodoListFactory(owner=user)
 
         item1 = TodoItemFactory(todo_list=list1)
-        item2 = TodoItemFactory(todo_list=list2)
+        TodoItemFactory(todo_list=list2)
 
         url = reverse("todoitem-list")
         response = authenticated_client.get(url, {"todo_list": list1.id})
@@ -143,7 +143,7 @@ class TestListTodoItems:
         list2 = TodoListFactory(owner=user, project=project2)
 
         item1 = TodoItemFactory(todo_list=list1)
-        item2 = TodoItemFactory(todo_list=list2)
+        TodoItemFactory(todo_list=list2)
 
         url = reverse("todoitem-list")
         response = authenticated_client.get(url, {"project": project1.id})
@@ -161,7 +161,7 @@ class TestListTodoItems:
         lane2 = KanbanLaneFactory(todo_list=kanban_list)
 
         item1 = TodoItemFactory(todo_list=kanban_list, kanban_lane=lane1)
-        item2 = TodoItemFactory(todo_list=kanban_list, kanban_lane=lane2)
+        TodoItemFactory(todo_list=kanban_list, kanban_lane=lane2)
 
         url = reverse("todoitem-list")
         response = authenticated_client.get(url, {"kanban_lane": lane1.id})
@@ -194,10 +194,10 @@ class TestListTodoItems:
     def test_order_items_by_due_date(self, authenticated_client, todo_list):
         """Test ordering items by due date."""
         # Set same display_order so due_date ordering takes effect
-        item1 = TodoItemFactory(
+        TodoItemFactory(
             todo_list=todo_list, title="Later", due_date=timezone.now() + timedelta(days=3), display_order=0
         )
-        item2 = TodoItemFactory(
+        TodoItemFactory(
             todo_list=todo_list, title="Sooner", due_date=timezone.now() + timedelta(days=1), display_order=0
         )
 
@@ -212,7 +212,7 @@ class TestListTodoItems:
 
 @pytest.mark.django_db
 class TestRetrieveTodoItem:
-    """Tests for GET /api/todos/items/{id}/"""
+    """Tests for GET /api/todos/items/{id}/."""
 
     def test_retrieve_item_requires_authentication(self, api_client, todo_item):
         """Test that unauthenticated requests return 401."""
@@ -258,7 +258,7 @@ class TestRetrieveTodoItem:
 
 @pytest.mark.django_db
 class TestCreateTodoItem:
-    """Tests for POST /api/todos/items/"""
+    """Tests for POST /api/todos/items/."""
 
     def test_create_item_requires_authentication(self, api_client):
         """Test that unauthenticated requests return 401."""
@@ -371,7 +371,7 @@ class TestCreateTodoItem:
 
 @pytest.mark.django_db
 class TestUpdateTodoItem:
-    """Tests for PATCH /api/todos/items/{id}/"""
+    """Tests for PATCH /api/todos/items/{id}/."""
 
     def test_update_item_requires_authentication(self, api_client, todo_item):
         """Test that unauthenticated requests return 401."""
@@ -416,7 +416,7 @@ class TestUpdateTodoItem:
 
 @pytest.mark.django_db
 class TestDeleteTodoItem:
-    """Tests for DELETE /api/todos/items/{id}/"""
+    """Tests for DELETE /api/todos/items/{id}/."""
 
     def test_delete_item_requires_authentication(self, api_client, todo_item):
         """Test that unauthenticated requests return 401."""
@@ -453,7 +453,7 @@ class TestDeleteTodoItem:
 
 @pytest.mark.django_db
 class TestCompleteItem:
-    """Tests for POST /api/todos/items/{id}/complete/"""
+    """Tests for POST /api/todos/items/{id}/complete/."""
 
     def test_complete_item(self, authenticated_client, todo_item):
         """Test marking item as complete."""
@@ -484,7 +484,7 @@ class TestCompleteItem:
 
 @pytest.mark.django_db
 class TestUncompleteItem:
-    """Tests for POST /api/todos/items/{id}/uncomplete/"""
+    """Tests for POST /api/todos/items/{id}/uncomplete/."""
 
     def test_uncomplete_item(self, authenticated_client, completed_item):
         """Test unmarking item (undo completion)."""
@@ -515,7 +515,7 @@ class TestUncompleteItem:
 
 @pytest.mark.django_db
 class TestMoveLane:
-    """Tests for POST /api/todos/items/{id}/move_lane/"""
+    """Tests for POST /api/todos/items/{id}/move_lane/."""
 
     def test_move_item_to_different_lane(self, authenticated_client, user):
         """Test moving item to a different kanban lane."""
@@ -561,7 +561,7 @@ class TestMoveLane:
 
 @pytest.mark.django_db
 class TestBulkComplete:
-    """Tests for POST /api/todos/items/bulk_complete/"""
+    """Tests for POST /api/todos/items/bulk_complete/."""
 
     def test_bulk_complete_items(self, authenticated_client, multiple_items):
         """Test bulk completing multiple items."""
@@ -590,7 +590,7 @@ class TestBulkComplete:
 
 @pytest.mark.django_db
 class TestBulkDelete:
-    """Tests for POST /api/todos/items/bulk_delete/"""
+    """Tests for POST /api/todos/items/bulk_delete/."""
 
     def test_bulk_delete_items(self, authenticated_client, multiple_items):
         """Test bulk deleting multiple items."""
@@ -611,7 +611,7 @@ class TestBulkDelete:
 
 @pytest.mark.django_db
 class TestReorderItems:
-    """Tests for POST /api/todos/items/reorder/"""
+    """Tests for POST /api/todos/items/reorder/."""
 
     def test_reorder_items(self, authenticated_client, user):
         """Test reordering items."""
@@ -640,15 +640,15 @@ class TestReorderItems:
 
 @pytest.mark.django_db
 class TestNestedListItems:
-    """Tests for nested route: /api/todos/lists/{id}/items/"""
+    """Tests for nested route: /api/todos/lists/{id}/items/."""
 
     def test_list_items_in_list(self, authenticated_client, user):
         """Test listing items within a list."""
         list1 = TodoListFactory(owner=user)
         list2 = TodoListFactory(owner=user)
 
-        item1 = TodoItemFactory(todo_list=list1, title="List 1 Item")
-        item2 = TodoItemFactory(todo_list=list2, title="List 2 Item")
+        TodoItemFactory(todo_list=list1, title="List 1 Item")
+        TodoItemFactory(todo_list=list2, title="List 2 Item")
 
         url = reverse("todolist-items-list", args=[list1.id])
         response = authenticated_client.get(url)

@@ -24,7 +24,7 @@ from todos.models import KanbanLane, TodoList
 
 @pytest.mark.django_db
 class TestListKanbanLanes:
-    """Tests for GET /api/todos/lanes/"""
+    """Tests for GET /api/todos/lanes/."""
 
     def test_list_lanes_requires_authentication(self, api_client):
         """Test that unauthenticated requests return 401."""
@@ -57,7 +57,7 @@ class TestListKanbanLanes:
         list2 = TodoListFactory(owner=user, view_mode=TodoList.ViewMode.KANBAN)
 
         lane1 = KanbanLaneFactory(todo_list=list1)
-        lane2 = KanbanLaneFactory(todo_list=list2)
+        KanbanLaneFactory(todo_list=list2)
 
         url = reverse("kanbanlane-list")
         response = authenticated_client.get(url, {"todo_list": list1.id})
@@ -70,7 +70,7 @@ class TestListKanbanLanes:
         """Test filtering default lane."""
         kanban_list = TodoListFactory(owner=user, view_mode=TodoList.ViewMode.KANBAN)
         default_lane = BacklogLaneFactory(todo_list=kanban_list)
-        custom_lane = KanbanLaneFactory(todo_list=kanban_list)
+        KanbanLaneFactory(todo_list=kanban_list)
 
         url = reverse("kanbanlane-list")
         response = authenticated_client.get(url, {"is_default": "true", "todo_list": kanban_list.id})
@@ -82,9 +82,9 @@ class TestListKanbanLanes:
     def test_list_lanes_ordered_by_display_order(self, authenticated_client, user):
         """Test that lanes are ordered by display_order."""
         kanban_list = TodoListFactory(owner=user, view_mode=TodoList.ViewMode.KANBAN)
-        lane1 = KanbanLaneFactory(todo_list=kanban_list, name="Third", display_order=2)
-        lane2 = KanbanLaneFactory(todo_list=kanban_list, name="First", display_order=0)
-        lane3 = KanbanLaneFactory(todo_list=kanban_list, name="Second", display_order=1)
+        KanbanLaneFactory(todo_list=kanban_list, name="Third", display_order=2)
+        KanbanLaneFactory(todo_list=kanban_list, name="First", display_order=0)
+        KanbanLaneFactory(todo_list=kanban_list, name="Second", display_order=1)
 
         url = reverse("kanbanlane-list")
         response = authenticated_client.get(url, {"todo_list": kanban_list.id})
@@ -98,7 +98,7 @@ class TestListKanbanLanes:
 
 @pytest.mark.django_db
 class TestRetrieveKanbanLane:
-    """Tests for GET /api/todos/lanes/{id}/"""
+    """Tests for GET /api/todos/lanes/{id}/."""
 
     def test_retrieve_lane_requires_authentication(self, api_client, kanban_lane):
         """Test that unauthenticated requests return 401."""
@@ -111,8 +111,8 @@ class TestRetrieveKanbanLane:
         """Test that lane detail includes items in that lane."""
         kanban_list = TodoListFactory(owner=user, view_mode=TodoList.ViewMode.KANBAN)
         lane = KanbanLaneFactory(todo_list=kanban_list)
-        item1 = TodoItemFactory(todo_list=kanban_list, kanban_lane=lane, title="Item 1")
-        item2 = TodoItemFactory(todo_list=kanban_list, kanban_lane=lane, title="Item 2")
+        TodoItemFactory(todo_list=kanban_list, kanban_lane=lane, title="Item 1")
+        TodoItemFactory(todo_list=kanban_list, kanban_lane=lane, title="Item 2")
 
         url = reverse("kanbanlane-detail", args=[lane.id])
         response = authenticated_client.get(url)
@@ -149,7 +149,7 @@ class TestRetrieveKanbanLane:
 
 @pytest.mark.django_db
 class TestCreateKanbanLane:
-    """Tests for POST /api/todos/lanes/"""
+    """Tests for POST /api/todos/lanes/."""
 
     def test_create_lane_requires_authentication(self, api_client):
         """Test that unauthenticated requests return 401."""
@@ -251,7 +251,7 @@ class TestCreateKanbanLane:
 
 @pytest.mark.django_db
 class TestUpdateKanbanLane:
-    """Tests for PATCH /api/todos/lanes/{id}/"""
+    """Tests for PATCH /api/todos/lanes/{id}/."""
 
     def test_update_lane_requires_authentication(self, api_client, kanban_lane):
         """Test that unauthenticated requests return 401."""
@@ -277,7 +277,7 @@ class TestUpdateKanbanLane:
     def test_update_lane_name_to_duplicate_fails(self, authenticated_client, user):
         """Test that updating lane name to duplicate in same list fails."""
         kanban_list = TodoListFactory(owner=user, view_mode=TodoList.ViewMode.KANBAN)
-        lane1 = KanbanLaneFactory(todo_list=kanban_list, name="Backlog")
+        KanbanLaneFactory(todo_list=kanban_list, name="Backlog")
         lane2 = KanbanLaneFactory(todo_list=kanban_list, name="In Progress")
 
         url = reverse("kanbanlane-detail", args=[lane2.id])
@@ -303,7 +303,7 @@ class TestUpdateKanbanLane:
 
 @pytest.mark.django_db
 class TestDeleteKanbanLane:
-    """Tests for DELETE /api/todos/lanes/{id}/"""
+    """Tests for DELETE /api/todos/lanes/{id}/."""
 
     def test_delete_lane_requires_authentication(self, api_client, kanban_lane):
         """Test that unauthenticated requests return 401."""

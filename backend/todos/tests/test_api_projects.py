@@ -21,7 +21,7 @@ from todos.models import Project
 
 @pytest.mark.django_db
 class TestListProjects:
-    """Tests for GET /api/todos/projects/"""
+    """Tests for GET /api/todos/projects/."""
 
     def test_list_projects_requires_authentication(self, api_client):
         """Test that unauthenticated requests return 401."""
@@ -50,7 +50,7 @@ class TestListProjects:
 
     def test_list_projects_excludes_deleted(self, authenticated_client, user):
         """Test that soft-deleted projects don't appear in list."""
-        active_project = ProjectFactory(owner=user, name="Active")
+        ProjectFactory(owner=user, name="Active")
         deleted_project = ProjectFactory(owner=user, name="Deleted")
         deleted_project.delete()  # Soft delete
 
@@ -94,9 +94,9 @@ class TestListProjects:
 
     def test_order_projects_by_display_order(self, authenticated_client, user):
         """Test ordering projects by display_order."""
-        project1 = ProjectFactory(owner=user, name="First", display_order=0)
-        project2 = ProjectFactory(owner=user, name="Second", display_order=1)
-        project3 = ProjectFactory(owner=user, name="Third", display_order=2)
+        ProjectFactory(owner=user, name="First", display_order=0)
+        ProjectFactory(owner=user, name="Second", display_order=1)
+        ProjectFactory(owner=user, name="Third", display_order=2)
 
         url = reverse("project-list")
         response = authenticated_client.get(url, {"ordering": "display_order"})
@@ -109,7 +109,7 @@ class TestListProjects:
 
     def test_list_projects_includes_completion_stats(self, authenticated_client, user):
         """Test that project list includes item counts and completion percentage."""
-        project = ProjectFactory(
+        ProjectFactory(
             owner=user,
             item_count=10,
             completed_count=7,
@@ -127,7 +127,7 @@ class TestListProjects:
 
 @pytest.mark.django_db
 class TestRetrieveProject:
-    """Tests for GET /api/todos/projects/{id}/"""
+    """Tests for GET /api/todos/projects/{id}/."""
 
     def test_retrieve_project_requires_authentication(self, api_client, project):
         """Test that unauthenticated requests return 401."""
@@ -150,8 +150,8 @@ class TestRetrieveProject:
     def test_retrieve_project_includes_nested_lists(self, authenticated_client, user):
         """Test that project detail includes nested lists."""
         project = ProjectFactory(owner=user)
-        list1 = TodoListFactory(project=project, owner=user, name="List 1", display_order=0)
-        list2 = TodoListFactory(project=project, owner=user, name="List 2", display_order=1)
+        TodoListFactory(project=project, owner=user, name="List 1", display_order=0)
+        TodoListFactory(project=project, owner=user, name="List 2", display_order=1)
 
         url = reverse("project-detail", args=[project.id])
         response = authenticated_client.get(url)
@@ -165,7 +165,7 @@ class TestRetrieveProject:
     def test_retrieve_project_excludes_deleted_lists(self, authenticated_client, user):
         """Test that deleted lists don't appear in nested lists."""
         project = ProjectFactory(owner=user)
-        active_list = TodoListFactory(project=project, owner=user, name="Active")
+        TodoListFactory(project=project, owner=user, name="Active")
         deleted_list = TodoListFactory(project=project, owner=user, name="Deleted")
         deleted_list.delete()
 
@@ -193,7 +193,7 @@ class TestRetrieveProject:
 
 @pytest.mark.django_db
 class TestCreateProject:
-    """Tests for POST /api/todos/projects/"""
+    """Tests for POST /api/todos/projects/."""
 
     def test_create_project_requires_authentication(self, api_client):
         """Test that unauthenticated requests return 401."""
@@ -260,7 +260,7 @@ class TestCreateProject:
 
 @pytest.mark.django_db
 class TestUpdateProject:
-    """Tests for PATCH /api/todos/projects/{id}/"""
+    """Tests for PATCH /api/todos/projects/{id}/."""
 
     def test_update_project_requires_authentication(self, api_client, project):
         """Test that unauthenticated requests return 401."""
@@ -321,7 +321,7 @@ class TestUpdateProject:
 
 @pytest.mark.django_db
 class TestDeleteProject:
-    """Tests for DELETE /api/todos/projects/{id}/"""
+    """Tests for DELETE /api/todos/projects/{id}/."""
 
     def test_delete_project_requires_authentication(self, api_client, project):
         """Test that unauthenticated requests return 401."""
@@ -377,7 +377,7 @@ class TestDeleteProject:
 
 @pytest.mark.django_db
 class TestArchiveProject:
-    """Tests for POST /api/todos/projects/{id}/archive/"""
+    """Tests for POST /api/todos/projects/{id}/archive/."""
 
     def test_archive_project(self, authenticated_client, project):
         """Test archiving a project."""
@@ -404,7 +404,7 @@ class TestArchiveProject:
 
 @pytest.mark.django_db
 class TestRestoreProject:
-    """Tests for POST /api/todos/projects/{id}/restore/"""
+    """Tests for POST /api/todos/projects/{id}/restore/."""
 
     def test_restore_deleted_project(self, authenticated_client, user):
         """Test restoring a soft-deleted project."""

@@ -590,7 +590,7 @@ class KanbanLaneViewSet(viewsets.ModelViewSet):
         except TodoList.DoesNotExist:
             from rest_framework.exceptions import ValidationError
 
-            raise ValidationError({"todo_list_id": "Invalid list ID."})
+            raise ValidationError({"todo_list_id": "Invalid list ID."}) from None
 
         serializer.save(todo_list=todo_list)
 
@@ -640,7 +640,7 @@ class ProjectListViewSet(viewsets.ModelViewSet):
         except Project.DoesNotExist:
             from rest_framework.exceptions import ValidationError
 
-            raise ValidationError({"project": "Invalid project ID."})
+            raise ValidationError({"project": "Invalid project ID."}) from None
 
 
 class ListItemViewSet(viewsets.ModelViewSet):
@@ -685,4 +685,4 @@ class ListItemViewSet(viewsets.ModelViewSet):
         except TodoList.DoesNotExist:
             from rest_framework.exceptions import ValidationError
 
-            raise ValidationError({"todo_list": "Invalid list ID."})
+            raise ValidationError({"todo_list": "Invalid list ID."}) from None
